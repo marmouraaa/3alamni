@@ -1,0 +1,211 @@
+{% extends 'early_warning/base_early_warning.html' %}
+{% block title %}Détail Alerte - Early Warning{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(139, 0, 0, 0.15);
+    }
+    
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .detail-header h1 {
+        color: #8B0000;
+        font-size: 1.5rem;
+    }
+    
+    .risk-badge {
+        padding: 8px 20px;
+        border-radius: 30px;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .risk-high { background: #8B0000; }
+    .risk-medium { background: #FFA500; }
+    .risk-low { background: #4CAF50; }
+    
+    .info-section {
+        margin-bottom: 25px;
+        padding: 15px;
+        background: #FFF5F5;
+        border-radius: 16px;
+    }
+    
+    .info-section h3 {
+        color: #8B0000;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #F0D0D0;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #5C1A1A;
+    }
+    
+    .ai-suggestion {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        margin: 25px 0;
+    }
+    
+    .ai-suggestion h3 {
+        color: #4facfe;
+        margin-bottom: 15px;
+    }
+    
+    .confidence {
+        display: inline-block;
+        background: rgba(79, 172, 254, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-top: 10px;
+    }
+    
+    .fallback-badge {
+        display: inline-block;
+        background: rgba(255, 165, 0, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+        color: #ffa500;
+    }
+    
+    .btn-intervene {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+    }
+    
+    .btn-back {
+        display: inline-block;
+        margin-top: 20px;
+        color: #8B0000;
+        text-decoration: none;
+    }
+    
+    .intervention-item {
+        background: white;
+        border: 1px solid #F0D0D0;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-card">
+        <div class="detail-header">
+            <h1>📋 Détail de l'alerte #{{ alert.id }}</h1>
+            <span class="risk-badge risk-{{ alert.risk_score.risk_level }}">
+                {% if alert.risk_score.risk_level == 'high' %}🔴 Risque Élevé - Score {{ alert.risk_score.risk_score|floatformat:0 }}
+                {% elif alert.risk_score.risk_level == 'medium' %}🟠 Risque Moyen - Score {{ alert.risk_score.risk_score|floatformat:0 }}
+                {% else %}🟢 Risque Faible - Score {{ alert.risk_score.risk_score|floatformat:0 }}{% endif %}
+            </span>
+        </div>
+        
+        <div class="info-section">
+            <h3>👤 Informations étudiant</h3>
+            <div class="info-grid">
+                <div class="info-item"><span class="info-label">Nom:</span><span>{{ alert.risk_score.student_name }}</span></div>
+                <div class="info-item"><span class="info-label">ID:</span><span>{{ alert.risk_score.student_id }}</span></div>
+                <div class="info-item"><span class="info-label">Classe:</span><span>{{ alert.risk_score.class_name }}</span></div>
+                <div class="info-item"><span class="info-label">Date alerte:</span><span>{{ alert.created_at|date:"d/m/Y H:i" }}</span></div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3>📊 Données académiques</h3>
+            <div class="info-grid">
+                <div class="info-item"><span class="info-label">Taux d'absence:</span><span>{{ alert.risk_score.absences }}%</span></div>
+                <div class="info-item"><span class="info-label">Moyenne générale:</span><span>{{ alert.risk_score.avg_grade|floatformat:1 }}/20</span></div>
+                <div class="info-item"><span class="info-label">Score comportement:</span><span>{{ alert.risk_score.behavior_score }}/10</span></div>
+                <div class="info-item"><span class="info-label">Score de risque:</span><span>{{ alert.risk_score.risk_score|floatformat:0 }}/100</span></div>
+            </div>
+        </div>
+        
+        {% if alert.ai_suggestion %}
+        <div class="ai-suggestion">
+            <h3>🤖 Suggestion IA 
+                {% if alert.ai_suggestion.fallback_used %}
+                <span class="fallback-badge">⚠️ Mode fallback</span>
+                {% else %}
+                <span class="fallback-badge" style="background: rgba(76, 175, 80, 0.2); color: #4CAF50;">✅ IA</span>
+                {% endif %}
+            </h3>
+            <p>{{ alert.ai_suggestion.description }}</p>
+            <div class="confidence">Confiance: {{ alert.ai_suggestion.confidence_percent }}</div>
+        </div>
+        
+        <div class="info-section">
+            <h3>📝 Explication de la suggestion</h3>
+            <p><strong>Facteur principal :</strong> {{ alert.ai_suggestion.explanation_primary_factor }}</p>
+            {% if alert.ai_suggestion.explanation_secondary_factor %}
+            <p><strong>Facteur secondaire :</strong> {{ alert.ai_suggestion.explanation_secondary_factor }}</p>
+            {% endif %}
+            <p><strong>Base d'analyse :</strong> {{ alert.ai_suggestion.explanation_basis }}</p>
+        </div>
+        {% endif %}
+        
+        {% if interventions %}
+        <div class="info-section">
+            <h3>📋 Interventions associées</h3>
+            {% for intervention in interventions %}
+            <div class="intervention-item">
+                <strong>{{ intervention.get_action_type_display }}</strong><br>
+                <small>Statut: {{ intervention.get_status_display }} | Échéance: {{ intervention.due_date|date:"d/m/Y" }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <a href="{% url 'early_warning:intervention_create' alert.id %}" class="btn-intervene">📝 Créer une intervention</a>
+        
+        <div style="text-align: center;">
+            <a href="{% url 'early_warning:alerts_list' %}" class="btn-back">← Retour aux alertes</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

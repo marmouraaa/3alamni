@@ -1,0 +1,208 @@
+{% extends 'base1.html' %}
+{% block title %}3alemni — Accueil{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wallpaper-time {
+        text-align: center;
+        color: white;
+        padding: 40px 0 30px;
+    }
+
+    .wallpaper-time .time {
+        font-size: 4.5rem;
+        font-weight: 600;
+        letter-spacing: -1px;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .wallpaper-time .date {
+        font-size: 0.85rem;
+        opacity: 0.7;
+        margin-top: 5px;
+    }
+
+    .welcome-badge {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 30px;
+        padding: 10px 20px;
+        margin: 10px 20px 20px;
+        color: white;
+        font-size: 0.8rem;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .apps-grid {
+        padding: 10px 20px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .app-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .app-icon:active {
+        transform: scale(0.95);
+    }
+
+    .app-img {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        margin-bottom: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s;
+    }
+
+    .app-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.65rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Couleurs des apps */
+    .tiktok-icon { background: #000000; border: 1px solid #333; }
+    .instagram-icon { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+    .snapchat-icon { background: #FFFC00; }
+    .facebook-icon { background: #1877F2; }
+    .health-icon { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+    .study-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .dashboard-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .profile-icon { background: linear-gradient(135deg, #fa709a, #fee140); }
+
+    .tiktok-icon i, .snapchat-icon i, .facebook-icon i { color: white; }
+    .instagram-icon i { color: white; }
+    .snapchat-icon i { color: black; }
+
+    /* Dock */
+    .dock {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        border-radius: 30px;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .dock .app-icon {
+        margin: 0;
+    }
+
+    .dock .app-img {
+        width: 52px;
+        height: 52px;
+        margin-bottom: 0;
+    }
+
+    .dock .app-label {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="wallpaper-time">
+    <div class="time" id="clock">--:--</div>
+    <div class="date" id="dateDisplay">Chargement...</div>
+</div>
+
+<div class="welcome-badge">
+    👋 Bonjour {{ request.user.first_name|default:request.user.username }} !
+</div>
+
+<div class="apps-grid">
+    <a href="{% url 'tiktok_feed' %}" class="app-icon">
+        <div class="app-img tiktok-icon"><i class="fab fa-tiktok"></i></div>
+        <span class="app-label">TikTok</span>
+    </a>
+    <a href="{% url 'instagram_feed' %}" class="app-icon">
+        <div class="app-img instagram-icon"><i class="fab fa-instagram"></i></div>
+        <span class="app-label">Instagram</span>
+    </a>
+    <a href="{% url 'snapchat_feed' %}" class="app-icon">
+        <div class="app-img snapchat-icon"><i class="fab fa-snapchat-ghost"></i></div>
+        <span class="app-label">Snapchat</span>
+    </a>
+    <a href="{% url 'facebook_feed' %}" class="app-icon">
+        <div class="app-img facebook-icon"><i class="fab fa-facebook-f"></i></div>
+        <span class="app-label">Facebook</span>
+    </a>
+    <a href="{% url 'health_new' %}" class="app-icon">
+        <div class="app-img health-icon"><i class="fas fa-heartbeat"></i></div>
+        <span class="app-label">Santé</span>
+    </a>
+    <a href="{% url 'study_start' %}" class="app-icon">
+        <div class="app-img study-icon"><i class="fas fa-clock"></i></div>
+        <span class="app-label">Study</span>
+    </a>
+    <a href="{% url 'dashboard_redirect' %}" class="app-icon">
+        <div class="app-img dashboard-icon"><i class="fas fa-chart-line"></i></div>
+        <span class="app-label">Dashboard</span>
+    </a>
+    <a href="#" class="app-icon">
+        <div class="app-img profile-icon"><i class="fas fa-user"></i></div>
+        <span class="app-label">Profil</span>
+    </a>
+</div>
+
+<div class="dock">
+    <a href="{% url 'tiktok_feed' %}" class="app-icon">
+        <div class="app-img tiktok-icon"><i class="fab fa-tiktok"></i></div>
+    </a>
+    <a href="{% url 'study_start' %}" class="app-icon">
+        <div class="app-img study-icon"><i class="fas fa-clock"></i></div>
+    </a>
+    <a href="{% url 'dashboard_redirect' %}" class="app-icon">
+        <div class="app-img dashboard-icon"><i class="fas fa-chart-line"></i></div>
+    </a>
+    <a href="#" class="app-icon">
+        <div class="app-img profile-icon"><i class="fas fa-user"></i></div>
+    </a>
+</div>
+<!-- Dans ton template iphone/home.html, remplace le lien logout par un formulaire -->
+<form method="post" action="{% url 'logout' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" style="background: none; border: none; color: red; cursor: pointer;">
+        🚪 Se déconnecter
+    </button>
+</form>
+<script>
+function updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const clockElem = document.getElementById('clock');
+    if (clockElem) clockElem.textContent = `${hours}:${minutes}`;
+
+    const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    const dateElem = document.getElementById('dateDisplay');
+    if (dateElem) {
+        dateElem.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+    }
+}
+
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+{% endblock %}

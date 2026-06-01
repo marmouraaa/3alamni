@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Déconnexion - 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #FFF5F5 0%, #F0D0D0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    
+    .logout-card {
+        background: white;
+        border-radius: 24px;
+        padding: 50px 45px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 20px 60px rgba(139, 0, 0, 0.15);
+        text-align: center;
+    }
+    
+    .logout-icon {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+    }
+    
+    .logout-card h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #8B0000;
+        margin-bottom: 10px;
+    }
+    
+    .logout-card p {
+        color: #999;
+        font-size: 0.9rem;
+        margin-bottom: 35px;
+    }
+    
+    .btn-confirm {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+        margin-bottom: 12px;
+    }
+    
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 0, 0, 0.4);
+    }
+    
+    .btn-cancel {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        background: transparent;
+        border: 2px solid #F0D0D0;
+        border-radius: 12px;
+        color: #5C1A1A;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        text-align: center;
+    }
+    
+    .btn-cancel:hover {
+        border-color: #8B0000;
+        color: #8B0000;
+        background: #FFF5F5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logout-card">
+    <div class="logout-icon">👋</div>
+    <h2>Tu veux partir ?</h2>
+    <p>Es-tu sûr(e) de vouloir te déconnecter de 3alemni ?</p>
+
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-confirm">
+            <i class="fas fa-sign-out-alt me-2"></i>
+            Oui, me déconnecter
+        </button>
+    </form>
+
+    <a href="{% url 'iphone_home' %}" class="btn-cancel">
+        <i class="fas fa-arrow-left me-2"></i>
+        Non, rester connecté
+    </a>
+</div>
+{% endblock %}

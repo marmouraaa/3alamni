@@ -1,0 +1,159 @@
+{% extends 'early_warning/base_early_warning.html' %}
+{% block title %}Détail Intervention - Early Warning{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(139, 0, 0, 0.15);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-planned { background: #2196F3; color: white; }
+    .status-in_progress { background: #FF9800; color: white; }
+    .status-completed { background: #4CAF50; color: white; }
+    .status-cancelled { background: #9E9E9E; color: white; }
+    
+    .info-section {
+        margin: 25px 0;
+        padding: 20px;
+        background: #FFF5F5;
+        border-radius: 16px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #5C1A1A;
+        margin-bottom: 8px;
+    }
+    
+    .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #F0D0D0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        background: #FFF5F5;
+    }
+    
+    .btn-complete {
+        width: 100%;
+        padding: 14px;
+        background: #4CAF50;
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+    
+    .btn-back {
+        display: inline-block;
+        margin-top: 20px;
+        color: #8B0000;
+        text-decoration: none;
+    }
+    
+    .status-form {
+        background: #F5F5F5;
+        padding: 20px;
+        border-radius: 16px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <h1 style="color: #8B0000;">📋 Intervention #{{ intervention.id }}</h1>
+            <span class="status-badge status-{{ intervention.status }}">
+                {% if intervention.status == 'planned' %}🔵 Planifiée
+                {% elif intervention.status == 'in_progress' %}🟠 En cours
+                {% elif intervention.status == 'completed' %}✅ Terminée
+                {% else %}❌ Annulée{% endif %}
+            </span>
+        </div>
+        
+        <div class="info-section">
+            <h3>👤 Étudiant</h3>
+            <p><strong>Nom:</strong> {{ intervention.alert.risk_score.student_name }}</p>
+            <p><strong>Classe:</strong> {{ intervention.alert.risk_score.class_name }}</p>
+            <p><strong>Score de risque:</strong> {{ intervention.alert.risk_score.risk_score|floatformat:0 }}/100 
+                ({% if intervention.alert.risk_score.risk_level == 'high' %}🔴 Risque Élevé
+                {% elif intervention.alert.risk_score.risk_level == 'medium' %}🟠 Risque Moyen
+                {% else %}🟢 Risque Faible{% endif %})
+            </p>
+        </div>
+        
+        <div class="info-section">
+            <h3>📝 Détails de l'intervention</h3>
+            <p><strong>Type:</strong> {{ intervention.get_action_type_display }}</p>
+            <p><strong>Description:</strong> {{ intervention.description }}</p>
+            <p><strong>Date limite:</strong> {{ intervention.due_date|date:"d/m/Y" }}
+                {% if intervention.is_overdue %} <span style="color: red;">⚠️ Dépassée</span>{% endif %}
+            </p>
+            <p><strong>Créée le:</strong> {{ intervention.created_at|date:"d/m/Y H:i" }}</p>
+            {% if intervention.notes %}
+            <p><strong>Notes:</strong> {{ intervention.notes }}</p>
+            {% endif %}
+        </div>
+        
+        {% if intervention.ai_suggestion %}
+        <div class="info-section">
+            <h3>🤖 Suggestion IA associée</h3>
+            <p>{{ intervention.ai_suggestion.description }}</p>
+            <small>Confiance: {{ intervention.ai_suggestion.confidence_percent }}</small>
+        </div>
+        {% endif %}
+        
+        {% if intervention.status != 'completed' and intervention.status != 'cancelled' %}
+        <div class="status-form">
+            <h3>🔄 Mettre à jour le statut</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Nouveau statut</label>
+                    <select name="status">
+                        <option value="planned" {% if intervention.status == 'planned' %}selected{% endif %}>Planifiée</option>
+                        <option value="in_progress" {% if intervention.status == 'in_progress' %}selected{% endif %}>En cours</option>
+                        <option value="completed">Terminée</option>
+                        <option value="cancelled">Annulée</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ajouter des notes</label>
+                    <textarea name="notes" rows="3" placeholder="Notes de suivi...">{{ intervention.notes }}</textarea>
+                </div>
+                <button type="submit" class="btn-complete">✅ Mettre à jour</button>
+            </form>
+        </div>
+        {% endif %}
+        
+        <div style="text-align: center;">
+            <a href="{% url 'early_warning:alerts_list' %}" class="btn-back">← Retour aux alertes</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

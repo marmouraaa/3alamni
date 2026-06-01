@@ -1,0 +1,246 @@
+{% extends 'base1.html' %}
+{% block title %}Study With Me{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Garde tous tes styles existants, ils sont très bien ! */
+/* Ajoute juste ceci à la fin : */
+
+#selection-view {
+    transition: all 0.3s ease;
+}
+
+.phone-content {
+    position: relative;
+    min-height: 600px;
+}
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="study-container" id="selection-view">
+    <div class="study-header">
+        <br>
+        <h2><i class="fas fa-book-open"></i> Study With Me</h2>
+        <p>Choisis ta durée d'étude</p>
+    </div>
+
+    <div class="time-grid">
+        <div class="time-card" data-seconds="900">
+            <div class="minutes">00:15</div>
+            <div class="unit">minutes</div>
+        </div>
+        <div class="time-card" data-seconds="1800">
+            <div class="minutes">00:30</div>
+            <div class="unit">minutes</div>
+        </div>
+        <div class="time-card" data-seconds="2700">
+            <div class="minutes">00:45</div>
+            <div class="unit">minutes</div>
+        </div>
+        <div class="time-card" data-seconds="3600">
+            <div class="minutes">1h:00</div>
+            <div class="unit">heure</div>
+        </div>
+        <div class="time-card" data-seconds="5400">
+            <div class="minutes">1h:30</div>
+            <div class="unit">heures</div>
+        </div>
+        <div class="time-card" data-seconds="7200">
+            <div class="minutes">2h:00</div>
+            <div class="unit">heures</div>
+        </div>
+        <div class="time-card" data-seconds="9000">
+            <div class="minutes">2h:30</div>
+            <div class="unit">heures</div>
+        </div>
+        <div class="time-card" data-seconds="10800">
+            <div class="minutes">3h:00</div>
+            <div class="unit">heures</div>
+        </div>
+    </div>
+
+    <button class="start-button" onclick="startStudy()">
+        <i class="fas fa-play"></i> Commencer l'étude
+    </button>
+
+    <div class="info-text">
+        <i class="fas fa-lock"></i> Pendant l'étude, l'écran est bloqué<br>
+        Termine pour gagner un badge
+    </div>
+</div>
+
+<script>
+let selectedSeconds = 3600;
+
+document.querySelectorAll('.time-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.time-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedSeconds = parseInt(this.dataset.seconds);
+    });
+    if (card.dataset.seconds == '3600') card.classList.add('selected');
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function startStudy() {
+    fetch('/study/api/start/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ duration: selectedSeconds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            enterLockMode(selectedSeconds);
+        } else {
+            alert('Erreur: ' + (data.error || 'Impossible de démarrer la session'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erreur de connexion au serveur');
+    });
+}
+
+function enterLockMode(totalSeconds) {
+    let timeLeft = totalSeconds;
+    
+    // Cacher la vue de sélection
+    document.getElementById('selection-view').style.display = 'none';
+    
+    // Créer l'overlay à l'intérieur de l'iPhone
+    const lockDiv = document.createElement('div');
+    lockDiv.className = 'lock-overlay';
+    lockDiv.id = 'lock-overlay';
+    lockDiv.innerHTML = `
+        <div class="lock-card">
+            <i class="fas fa-lock" style="font-size:2rem; color:#4facfe; margin-bottom:15px;"></i>
+            <h3 style="color:white; margin-bottom:10px; font-size:1.1rem;">Mode Étude</h3>
+            <div class="big-timer" id="lockTimer">${formatTime(timeLeft)}</div>
+            <p class="lock-message"><i class="fas fa-brain"></i> Reste concentré(e) !</p>
+            <p class="lock-message" style="margin-top:15px; font-size:0.6rem;">Ne quitte pas cette page</p>
+        </div>
+    `;
+    
+    // Trouver le conteneur principal
+    const phoneContent = document.querySelector('.phone-content');
+    if (phoneContent) {
+        phoneContent.appendChild(lockDiv);
+    } else {
+        document.body.appendChild(lockDiv);
+    }
+    
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        const timerElem = document.getElementById('lockTimer');
+        if (timerElem) {
+            timerElem.innerText = formatTime(timeLeft);
+            timerElem.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                timerElem.style.transform = 'scale(1)';
+            }, 100);
+        }
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            completeStudy(lockDiv);
+        }
+    }, 1000);
+    
+    window.addEventListener('beforeunload', warnBeforeExit);
+}
+
+function formatTime(seconds) {
+    if (seconds < 0) seconds = 0;
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+        return `${hours}h ${mins.toString().padStart(2,'0')}m ${secs.toString().padStart(2,'0')}s`;
+    }
+    return `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+}
+
+function completeStudy(lockDiv) {
+    fetch('/study/api/complete/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.badge) {
+            lockDiv.innerHTML = `
+                <div class="lock-card">
+                    <div class="completion-badge">${data.badge.icon || '🏆'}</div>
+                    <h2 style="color:white; font-size:1.3rem;">Félicitations !</h2>
+                    <p style="color:#4facfe; margin:15px 0; font-weight:500;">Badge débloqué</p>
+                    <p style="color:white; font-size:1rem; font-weight:bold;">${data.badge.name}</p>
+                    <p style="color:rgba(255,255,255,0.7); font-size:0.8rem; margin-top:10px;">${data.badge.description || ''}</p>
+                    <button onclick="goToHome()" style="background:#4facfe; border:none; padding:10px 25px; border-radius:25px; color:white; margin-top:20px; cursor:pointer;">
+                        <i class="fas fa-home"></i> Retour à l'accueil
+                    </button>
+                </div>
+            `;
+        } else {
+            lockDiv.innerHTML = `
+                <div class="lock-card">
+                    <div class="completion-badge">✅</div>
+                    <h2 style="color:white; font-size:1.3rem;">Session terminée !</h2>
+                    <p style="color:#4facfe; margin:15px 0;">Bravo pour ton étude !</p>
+                    <button onclick="goToHome()" style="background:#4facfe; border:none; padding:10px 25px; border-radius:25px; color:white; margin-top:20px; cursor:pointer;">
+                        <i class="fas fa-home"></i> Retour à l'accueil
+                    </button>
+                </div>
+            `;
+        }
+        window.removeEventListener('beforeunload', warnBeforeExit);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        lockDiv.innerHTML = `
+            <div class="lock-card">
+                <div class="completion-badge">⚠️</div>
+                <h2 style="color:white; font-size:1.3rem;">Erreur</h2>
+                <p style="color:red; margin:15px 0;">Problème de sauvegarde</p>
+                <button onclick="goToHome()" style="background:#4facfe; border:none; padding:10px 25px; border-radius:25px; color:white; margin-top:20px; cursor:pointer;">
+                    <i class="fas fa-home"></i> Retour à l'accueil
+                </button>
+            </div>
+        `;
+    });
+}
+
+function goToHome() {
+    window.location.href = '/iphone/';
+}
+
+function warnBeforeExit(e) {
+    e.preventDefault();
+    e.returnValue = 'Ton étude n\'est pas terminée ! Tu vas perdre ta progression.';
+    return 'Ton étude n\'est pas terminée ! Tu vas perdre ta progression.';
+}
+</script>
+{% endblock %}

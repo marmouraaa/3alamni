@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block title %}Mon Dashboard — 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --etudiant-primary: #8B0000;
+    --etudiant-secondary: #C41E3A;
+    --etudiant-bg: #FFF5F5;
+    --etudiant-card: white;
+    --etudiant-text: #2D1B1B;
+}
+
+body {
+    background: linear-gradient(135deg, #FFE8E8 0%, #FFD4D4 100%);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #8B0000, #C41E3A);
+    padding: 30px 0;
+    border-radius: 0 0 40px 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(139, 0, 0, 0.2);
+}
+
+.welcome-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    color: white;
+}
+
+.welcome-text h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.welcome-text p {
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    padding: 0 30px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover { transform: translateY(-5px); }
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #8B0000;
+    margin: 25px 20px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.apps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.app-card {
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    transition: all 0.3s;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(139,0,0,0.1);
+}
+
+.app-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(139,0,0,0.15);
+}
+
+.app-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+}
+
+.app-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #8B0000;
+    margin-bottom: 5px;
+}
+
+.app-card p {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.streak-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    border-radius: 30px;
+    padding: 5px 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #5C1A1A;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="welcome-badge">
+        <div class="welcome-text">
+            <h1>🎓 Bonjour {{ request.user.first_name|default:request.user.username }} !</h1>
+            <p>Prêt à apprendre différemment aujourd'hui ?</p>
+        </div>
+        <div class="streak-badge">
+            🔥 12 jours de suite
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">1,247</div>
+            <div class="stat-label">⭐ Points gagnés</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">28</div>
+            <div class="stat-label">📚 Quiz complétés</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">15h</div>
+            <div class="stat-label">⏱️ Temps d'étude</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">3</div>
+            <div class="stat-label">🏆 Badges</div>
+        </div>
+    </div>
+</div>
+
+<div class="section-title">
+    <span>📱</span> Apprends sur tes réseaux préférés
+    <span>→</span>
+</div>
+
+<div class="apps-container">
+    <div class="app-card" onclick="window.location.href='{% url 'tiktok_feed' %}'">
+        <div class="app-icon">🎵</div>
+        <h3>TikTok Quiz</h3>
+        <p>Scrolling vertical • Like = bonne réponse</p>
+    </div>
+    <div class="app-card" onclick="window.location.href='{% url 'instagram_feed' %}'">
+        <div class="app-icon">📷</div>
+        <h3>Instagram Stories</h3>
+        <p>Réponds en story, visible par ta classe</p>
+    </div>
+    <div class="app-card" onclick="window.location.href='{% url 'snapchat_feed' %}'">
+        <div class="app-icon">👻</div>
+        <h3>Snapchat Challenge</h3>
+        <p>Questions éphémères • 30 secondes max</p>
+    </div>
+    <div class="app-card" onclick="window.location.href='{% url 'facebook_feed' %}'">
+        <div class="app-icon">f</div>
+        <h3>Facebook Group</h3>
+        <p>Commente les réponses des camarades</p>
+    </div>
+</div>
+
+<div class="section-title">
+    <span>🧠</span> Mon bien-être
+</div>
+
+<div class="apps-container" style="grid-template-columns: 1fr 1fr;">
+    <div class="app-card" onclick="window.location.href='{% url 'health_new' %}'">
+        <div class="app-icon">🤝</div>
+        <h3>Parler anonymement</h3>
+        <p>Soutien psychologique gratuit</p>
+    </div>
+    <div class="app-card" onclick="window.location.href='{% url 'study_start' %}'">
+        <div class="app-icon">⏱️</div>
+        <h3>Study With Me</h3>
+        <p>Timer anti-procrastination</p>
+    </div>
+</div>
+
+<div style="text-align: center; margin: 30px 0 20px;">
+    <a href="{% url 'iphone_home' %}" class="btn" style="background:#8B0000;color:white;padding:12px 30px;border-radius:30px;text-decoration:none;">
+        ← Retour à mon iPhone
+    </a>
+</div>
+{% endblock %}

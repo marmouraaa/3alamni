@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Professeur - 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .dashboard-header h1 {
+        color: #8B0000;
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #8B0000;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 40px;
+    }
+    
+    .btn-prof {
+        display: block;
+        text-align: center;
+        padding: 12px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary-prof {
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        color: white;
+    }
+    
+    .btn-primary-prof:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
+        color: white;
+    }
+    
+    .btn-outline-prof {
+        border: 2px solid #8B0000;
+        color: #8B0000;
+        background: white;
+    }
+    
+    .btn-outline-prof:hover {
+        background: #8B0000;
+        color: white;
+    }
+    
+    .section-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .section-title {
+        color: #8B0000;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+        border-bottom: 2px solid #F0D0D0;
+        padding-bottom: 10px;
+    }
+    
+    .chart-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .chart-container {
+        background: #f9f9f9;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-container h3 {
+        text-align: center;
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1rem;
+    }
+    
+    canvas {
+        max-height: 350px;
+        width: 100% !important;
+    }
+    
+    .debug-info {
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-x: auto;
+    }
+    
+    .intervention-card {
+        background: #F9F9F9;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-left: 4px solid #8B0000;
+    }
+    
+    .alert-item {
+        background: #FFF5F5;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-intervene {
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #FFF5F5;
+        border-radius: 16px;
+    }
+    
+    @media (max-width: 768px) {
+        .chart-row {
+            grid-template-columns: 1fr;
+        }
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>📚 Dashboard Professeur</h1>
+        <p>Bienvenue {{ user.get_full_name|default:user.username }} !</p>
+        {% if not has_data %}
+            <div style="background: #E3F2FD; border-radius: 12px; padding: 10px; margin-top: 15px;">
+                <small>ℹ️ Aucune donnée pour le moment. Commencez par importer un fichier CSV.</small>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Statistiques de base -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_students }}</div>
+            <div class="stat-label">Total étudiants</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#8B0000;">{{ high_risk_count }}</div>
+            <div class="stat-label">🔴 Risque élevé</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#FFA500;">{{ medium_risk_count }}</div>
+            <div class="stat-label">🟠 Risque moyen</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#4CAF50;">{{ low_risk_count }}</div>
+            <div class="stat-label">🟢 Risque faible</div>
+        </div>
+    </div>
+    
+    <!-- Boutons d'action -->
+    <div class="action-buttons">
+        <a href="{% url 'early_warning:import_csv' %}" class="btn-prof btn-primary-prof">📤 Importer CSV</a>
+        <a href="{% url 'early_warning:threshold_config' %}" class="btn-prof btn-outline-prof">⚙️ Seuils</a>
+        <a href="{% url 'early_warning:export_csv' %}" class="btn-prof btn-outline-prof">📥 Export CSV</a>
+        <a href="{% url 'early_warning:export_pdf' %}" class="btn-prof btn-outline-prof">📄 Export PDF</a>
+        <a href="{% url 'early_warning:alerts_list' %}" class="btn-prof btn-outline-prof">⚠️ Alertes</a>
+        <a href="{% url 'early_warning:mes_interventions' %}" class="btn-prof btn-primary-prof">📋 Mes interventions</a>
+    </div>
+    
+    {% if has_data %}
+        <!-- Section de débogage -->
+        <div class="debug-info">
+            <strong>🔍 Données chargées:</strong><br>
+            📊 Distribution: {{ risk_distribution_data|join:", " }}<br>
+            📈 Classes: {{ class_avg_labels|length }} classes<br>
+            👥 Top 10: {{ top10_labels|length }} étudiants<br>
+            📖 Scatter: {{ scatter_absences|length }} points
+        </div>
+        
+        <!-- LIGNE 1: Distribution des risques + Score par classe -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h3>🍕 Distribution des niveaux de risque</h3>
+                <canvas id="riskDistributionChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>📊 Score de risque moyen par classe</h3>
+                <canvas id="classAvgRiskChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- LIGNE 2: Histogramme des scores + Évolution temporelle -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h3>📈 Distribution des scores de risque</h3>
+                <canvas id="riskHistogramChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>📅 Évolution du score de risque moyen</h3>
+                <canvas id="dailyTrendChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- LIGNE 3: Corrélation (Radar) + Top 10 risques -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h3>🎯 Corrélation avec le score de risque</h3>
+                <canvas id="correlationsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>🏆 Top 10 étudiants à risque</h3>
+                <canvas id="top10RisksChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- LIGNE 4: Scatter plots -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h3>📖 Corrélation Absences vs Risque</h3>
+                <canvas id="scatterAbsencesChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>📝 Corrélation Notes vs Risque</h3>
+                <canvas id="scatterGradesChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- LIGNE 5: Nombre d'étudiants par classe + Moyenne des notes par classe -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h3>👥 Nombre d'étudiants par classe</h3>
+                <canvas id="classCountChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>📝 Moyenne des notes par classe</h3>
+                <canvas id="classGradesChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Mes interventions récentes -->
+        <div class="section-card">
+            <h2 class="section-title">📋 Mes interventions récentes</h2>
+            {% for intervention in recent_interventions %}
+            <div class="intervention-card">
+                <strong>{{ intervention.get_action_type_display }}</strong> - 
+                {{ intervention.alert.risk_score.student_name }} 
+                ({{ intervention.alert.risk_score.class_name }})
+                <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+                    {{ intervention.description|truncatechars:80 }}
+                </div>
+                <div style="margin-top: 8px;">
+                    <a href="{% url 'early_warning:intervention_detail' intervention.pk %}" style="color: #8B0000;">Voir détails →</a>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 20px;">Aucune intervention</div>
+            {% endfor %}
+        </div>
+        
+        <!-- Alertes récentes -->
+        <div class="section-card">
+            <h2 class="section-title">⚠️ Alertes récentes</h2>
+            {% for alert in alerts %}
+            <div class="alert-item">
+                <div>
+                    <strong>{{ alert.risk_score.student_name }}</strong><br>
+                    <small>Score: {{ alert.risk_score.risk_score|floatformat:0 }} | 
+                    Absences: {{ alert.risk_score.absences }}%</small>
+                </div>
+                <a href="{% url 'early_warning:intervention_create' alert.id %}" class="btn-intervene">Intervenir</a>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 20px;">Aucune alerte active</div>
+            {% endfor %}
+        </div>
+        
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-chart-line" style="font-size: 4rem; color: #ccc;"></i>
+            <h3>Aucune donnée disponible</h3>
+            <p>Importez un fichier CSV pour voir les graphiques.</p>
+            <a href="{% url 'early_warning:import_csv' %}" class="btn-primary-prof" style="display: inline-block; padding: 12px 30px;">Importer CSV</a>
+        </div>
+    {% endif %}
+</div>
+
+{% if has_data %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Graphique 1: Camembert - Distribution des risques
+        const riskDistCtx = document.getElementById('riskDistributionChart').getContext('2d');
+        new Chart(riskDistCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ risk_distribution_labels|safe }},
+                datasets: [{
+                    data: {{ risk_distribution_data|safe }},
+                    backgroundColor: ['#8B0000', '#FFA500', '#4CAF50'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+        });
+        
+        // Graphique 2: Barres - Score moyen par classe
+        {% if class_avg_labels %}
+        const classAvgCtx = document.getElementById('classAvgRiskChart').getContext('2d');
+        new Chart(classAvgCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ class_avg_labels|safe }},
+                datasets: [{
+                    label: 'Score de risque moyen',
+                    data: {{ class_avg_data|safe }},
+                    backgroundColor: '#8B0000',
+                    borderRadius: 5
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+        {% endif %}
+        
+        // Graphique 3: Histogramme
+        const histCtx = document.getElementById('riskHistogramChart').getContext('2d');
+        new Chart(histCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ histogram_labels|safe }},
+                datasets: [{
+                    label: "Nombre d'étudiants",
+                    data: {{ histogram_data|safe }},
+                    backgroundColor: '#FFA500',
+                    borderRadius: 5
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true } } }
+        });
+        
+        // Graphique 4: Évolution temporelle
+        {% if daily_labels %}
+        const trendCtx = document.getElementById('dailyTrendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {{ daily_labels|safe }},
+                datasets: [{
+                    label: 'Score de risque moyen',
+                    data: {{ daily_data|safe }},
+                    borderColor: '#8B0000',
+                    backgroundColor: 'rgba(139, 0, 0, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+        {% endif %}
+        
+        // Graphique 5: Radar - Corrélations
+        const corrCtx = document.getElementById('correlationsChart').getContext('2d');
+        new Chart(corrCtx, {
+            type: 'radar',
+            data: {
+                labels: {{ correlation_labels|safe }},
+                datasets: [{
+                    label: 'Coefficient de corrélation',
+                    data: {{ correlation_data|safe }},
+                    backgroundColor: 'rgba(139, 0, 0, 0.2)',
+                    borderColor: '#8B0000',
+                    pointBackgroundColor: '#8B0000'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, scales: { r: { beginAtZero: true, max: 1 } } }
+        });
+        
+        // Graphique 6: Top 10 risques (barres horizontales)
+        {% if top10_labels %}
+        const top10Ctx = document.getElementById('top10RisksChart').getContext('2d');
+        new Chart(top10Ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ top10_labels|safe }},
+                datasets: [{
+                    label: 'Score de risque',
+                    data: {{ top10_data|safe }},
+                    backgroundColor: '#d32f2f',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { x: { beginAtZero: true, max: 100 } }
+            }
+        });
+        {% endif %}
+        
+        // Graphique 7: Scatter plot Absences
+        {% if scatter_absences %}
+        const scatterAbsCtx = document.getElementById('scatterAbsencesChart').getContext('2d');
+        new Chart(scatterAbsCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Étudiants',
+                    data: {{ scatter_absences|safe }},
+                    backgroundColor: '#8B0000',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { title: { display: true, text: 'Absences (%)' }, beginAtZero: true, max: 100 },
+                    y: { title: { display: true, text: 'Score de risque' }, beginAtZero: true, max: 100 }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Graphique 8: Scatter plot Notes
+        {% if scatter_grades %}
+        const scatterGradesCtx = document.getElementById('scatterGradesChart').getContext('2d');
+        new Chart(scatterGradesCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Étudiants',
+                    data: {{ scatter_grades|safe }},
+                    backgroundColor: '#4CAF50',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { title: { display: true, text: 'Notes (/20)' }, beginAtZero: true, max: 20 },
+                    y: { title: { display: true, text: 'Score de risque' }, beginAtZero: true, max: 100 }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Graphique 9: Nombre d'étudiants par classe
+        {% if class_count_labels %}
+        const classCountCtx = document.getElementById('classCountChart').getContext('2d');
+        new Chart(classCountCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ class_count_labels|safe }},
+                datasets: [{
+                    label: "Nombre d'étudiants",
+                    data: {{ class_count_data|safe }},
+                    backgroundColor: '#2196F3',
+                    borderRadius: 5
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true } } }
+        });
+        {% endif %}
+        
+        // Graphique 10: Moyenne des notes par classe
+        {% if class_grades_labels %}
+        const classGradesCtx = document.getElementById('classGradesChart').getContext('2d');
+        new Chart(classGradesCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ class_grades_labels|safe }},
+                datasets: [{
+                    label: 'Moyenne des notes (/20)',
+                    data: {{ class_grades_data|safe }},
+                    backgroundColor: '#4CAF50',
+                    borderRadius: 5
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, max: 20 } } }
+        });
+        {% endif %}
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,362 @@
+{% extends 'base1.html' %}
+{% block title %}Chat anonyme — 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 60px);
+    padding: 10px 15px 0;
+}
+
+/* ── Info IA en haut ─────────────────────────── */
+.ai-info-bar {
+    background: rgba(67,233,123,0.08);
+    border: 1px solid rgba(67,233,123,0.2);
+    border-radius: 16px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-size: 0.7rem;
+}
+.ai-info-bar .label { color: rgba(255,255,255,0.5); }
+.ai-info-bar .value { color: #43e97b; font-weight: 600; }
+.ai-info-bar .override-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 20px;
+    padding: 3px 10px;
+    color: white;
+    font-size: 0.65rem;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+/* ── Connection status ───────────────────────── */
+.conn-status {
+    text-align: center;
+    font-size: 0.65rem;
+    padding: 4px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+}
+.conn-status.connected    { background: rgba(67,233,123,0.2); color: #43e97b; }
+.conn-status.disconnected { background: rgba(255,100,100,0.2); color: #ff6464; }
+.conn-status.reconnecting { background: rgba(255,165,0,0.2);  color: #ffa502; }
+
+/* ── Messages ────────────────────────────────── */
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 5px 0;
+    margin-bottom: 10px;
+}
+.messages-area::-webkit-scrollbar { width: 3px; }
+.messages-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+.message { margin-bottom: 12px; display: flex; }
+.message-student  { justify-content: flex-start; }
+.message-counselor{ justify-content: flex-end; }
+.message-system   { justify-content: center; }
+
+.bubble {
+    max-width: 78%;
+    padding: 9px 13px;
+    border-radius: 18px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+.message-student  .bubble { background: linear-gradient(135deg,#43e97b,#38f9d7); color:#1a1a2e; border-bottom-left-radius:4px; }
+.message-counselor .bubble { background: rgba(255,255,255,0.12); color:white; border-bottom-right-radius:4px; }
+.message-system   .bubble { background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.5); font-size:0.65rem; border-radius:20px; }
+
+.bubble .sender { font-size:0.6rem; opacity:0.7; margin-bottom:3px; font-weight:600; }
+.bubble .time   { font-size:0.58rem; opacity:0.5; margin-top:4px; text-align:right; }
+
+/* ── Saisie ──────────────────────────────────── */
+.input-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0 12px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.input-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 25px;
+    color: white;
+    padding: 10px 15px;
+    font-size: 0.85rem;
+}
+.input-row input::placeholder { color: rgba(255,255,255,0.3); }
+.input-row input:focus { outline: none; border-color: #43e97b; }
+.input-row button {
+    background: linear-gradient(135deg,#43e97b,#38f9d7);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    color: #1a1a2e;
+    cursor: pointer;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Override modal ──────────────────────────── */
+.override-modal {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background: #1a1a2e;
+    border: 1px solid rgba(67,233,123,0.3);
+    border-radius: 20px;
+    padding: 20px;
+    z-index: 200;
+    width: 80%;
+}
+.override-modal select {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    color: white;
+    padding: 8px;
+    margin: 10px 0;
+}
+.override-modal button {
+    width: 100%;
+    background: linear-gradient(135deg,#43e97b,#38f9d7);
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    color: #1a1a2e;
+    font-weight: 700;
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="chat-wrapper">
+
+    <!-- Info IA (Track E) -->
+    <div class="ai-info-bar">
+        <span class="label">🤖 IA : </span>
+        <span class="value">
+            {% if ai_category == 'stress' %}😰 Stress
+            {% elif ai_category == 'family' %}👨‍👩‍👧 Famille
+            {% elif ai_category == 'school' %}📚 École
+            {% elif ai_category == 'anxiety' %}🌪️ Anxiété
+            {% else %}💬 Autre{% endif %}
+        </span>
+        <span class="label"> • confiance </span>
+        <span class="value">{{ ai_confidence|floatformat:0 }}%</span>
+        <span class="label"> • urgence </span>
+        <span class="value">{{ urgency_level }}</span>
+        {% if is_counselor %}
+            <button class="override-btn" onclick="openOverride()">✏️ Corriger</button>
+        {% endif %}
+        {% if ai_explanation %}
+        <div style="margin-top:5px; color:rgba(255,255,255,0.5); font-size:0.62rem;">
+            💡 {{ ai_explanation|truncatechars:120 }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Status connexion -->
+    <div class="conn-status disconnected" id="conn-status">
+        ⏳ Connexion en cours...
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-area" id="messages-area">
+        {% for msg in messages_list %}
+        <div class="message message-{{ msg.sender_role }}">
+            <div class="bubble">
+                <div class="sender">
+                    {% if msg.sender_role == 'student' %}{{ anonymous_id }}
+                    {% else %}🧠 Conseiller{% endif %}
+                </div>
+                {{ msg.content }}
+                <div class="time">{{ msg.timestamp|date:"H:i" }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Saisie -->
+    {% if request_status != 'closed' %}
+    <div class="input-row">
+        <input type="text" id="msg-input" placeholder="Écris ton message..." autocomplete="off">
+        <button id="send-btn" onclick="sendMsg()" disabled>
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:10px;font-size:0.7rem;color:rgba(255,255,255,0.4);">
+        ✅ Cette discussion est clôturée.
+    </div>
+    {% endif %}
+
+    <a href="{% if is_counselor %}{% url 'health_requests' %}{% else %}{% url 'iphone_home' %}{% endif %}"
+       style="display:block;text-align:center;margin-top:8px;color:rgba(255,255,255,0.4);font-size:0.7rem;">
+        ← Retour
+    </a>
+</div>
+
+<!-- Override modal (conseiller uniquement) -->
+{% if is_counselor %}
+<div class="override-modal" id="override-modal">
+    <div style="color:white;font-weight:600;margin-bottom:5px;">✏️ Corriger la catégorie IA</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:0.7rem;">Human in the loop — Track E</div>
+    <select id="override-select">
+        <option value="stress">😰 Stress</option>
+        <option value="family">👨‍👩‍👧 Famille</option>
+        <option value="school">📚 École</option>
+        <option value="anxiety">🌪️ Anxiété</option>
+        <option value="other">💬 Autre</option>
+    </select>
+    <button onclick="submitOverride()">Confirmer la correction</button>
+    <button onclick="closeOverride()"
+            style="background:rgba(255,255,255,0.1);color:white;margin-top:8px;">Annuler</button>
+</div>
+{% endif %}
+
+<script>
+const REQUEST_ID = {{ request_id }};
+const WS_URL     = 'ws://' + window.location.host + '/ws/health/chat/' + REQUEST_ID + '/';
+const CSRF_TOKEN = '{{ csrf_token }}';
+
+let ws = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 5;
+
+// ── WebSocket ─────────────────────────────────────────────────────────────
+function connect() {
+    setStatus('reconnecting', '🔄 Connexion...');
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+        reconnectAttempts = 0;
+        setStatus('connected', '🟢 Connecté — chat chiffré et anonyme');
+        document.getElementById('send-btn').disabled = false;
+    };
+
+    ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        if (data.type === 'system') {
+            appendSystem(data.message);
+        } else if (data.type === 'security_block') {
+            appendSystem('⛔ ' + data.message);
+        } else if (data.type === 'message') {
+            appendMessage(data.sender, data.message, data.sender_role, data.timestamp);
+        } else if (data.type === 'error') {
+            appendSystem('⚠️ ' + data.message);
+        }
+    };
+
+    ws.onclose = (e) => {
+        setStatus('disconnected', '🔴 Déconnecté');
+        document.getElementById('send-btn').disabled = true;
+
+        // Reconnexion automatique — FAILURE INJECTION : déconnexion WebSocket
+        if (reconnectAttempts < MAX_RECONNECT) {
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
+            reconnectAttempts++;
+            appendSystem(`⚠️ Connexion perdue. Reconnexion dans ${Math.round(delay/1000)}s... (${reconnectAttempts}/${MAX_RECONNECT})`);
+            setTimeout(connect, delay);
+        } else {
+            appendSystem('❌ Impossible de se reconnecter. Rechargez la page.');
+        }
+    };
+
+    ws.onerror = () => {
+        setStatus('disconnected', '🔴 Erreur de connexion');
+    };
+}
+
+function sendMsg() {
+    const input = document.getElementById('msg-input');
+    const text  = input.value.trim();
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ message: text }));
+    input.value = '';
+}
+
+document.getElementById('msg-input')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMsg();
+});
+
+// ── Affichage ─────────────────────────────────────────────────────────────
+function appendMessage(sender, text, role, time) {
+    const area = document.getElementById('messages-area');
+    const div  = document.createElement('div');
+    div.className = `message message-${role}`;
+    div.innerHTML = `
+        <div class="bubble">
+            <div class="sender">${sender}</div>
+            ${escHtml(text)}
+            <div class="time">${time || new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'})}</div>
+        </div>`;
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+}
+
+function appendSystem(text) {
+    const area = document.getElementById('messages-area');
+    const div  = document.createElement('div');
+    div.className = 'message message-system';
+    div.innerHTML = `<div class="bubble">${escHtml(text)}</div>`;
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+}
+
+function setStatus(cls, text) {
+    const el = document.getElementById('conn-status');
+    el.className = `conn-status ${cls}`;
+    el.textContent = text;
+}
+
+function escHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+}
+
+// ── Override catégorie (conseiller) ───────────────────────────────────────
+function openOverride()  { document.getElementById('override-modal').style.display = 'block'; }
+function closeOverride() { document.getElementById('override-modal').style.display = 'none'; }
+
+function submitOverride() {
+    const cat = document.getElementById('override-select').value;
+    fetch(`/health/override/${REQUEST_ID}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': CSRF_TOKEN,
+        },
+        body: `category=${cat}`,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            appendSystem(`✅ Catégorie corrigée → ${data.new_category} (enregistré dans les logs)`);
+            closeOverride();
+        } else {
+            appendSystem('❌ Erreur : ' + (data.error || 'inconnue'));
+        }
+    });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+connect();
+// Scroll en bas au chargement
+document.getElementById('messages-area').scrollTop = 99999;
+</script>
+{% endblock %}

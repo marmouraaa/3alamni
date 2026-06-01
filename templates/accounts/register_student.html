@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% block title %}Inscription Étudiant - 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #FFF5F5 0%, #F0D0D0 100%);
+        padding: 40px 20px;
+    }
+    
+    .register-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .register-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(139, 0, 0, 0.15);
+    }
+    
+    .register-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .register-header h1 {
+        color: #8B0000;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .register-header p {
+        color: #666;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #5C1A1A;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #F0D0D0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        background: #FFF5F5;
+    }
+    
+    .form-group input:focus, .form-group select:focus {
+        border-color: #8B0000;
+        outline: none;
+        background: white;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 0, 0, 0.4);
+    }
+    
+    .conditional-field {
+        display: none;
+    }
+    
+    .conditional-field.visible {
+        display: block;
+    }
+    
+    .errorlist {
+        color: #C41E3A;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .help-text {
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <h1>🎓 Inscription Étudiant</h1>
+            <p>Rejoins une nouvelle façon d'apprendre !</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Prénom *</label>
+                    <input type="text" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Nom *</label>
+                    <input type="text" name="last_name" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Nom d'utilisateur *</label>
+                <input type="text" name="username" required>
+                <div class="help-text">Choisis un identifiant unique</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" name="email" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date de naissance *</label>
+                    <input type="date" name="date_of_birth" required>
+                </div>
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="tel" name="phone">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mot de passe *</label>
+                    <input type="password" name="password1" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmer mot de passe *</label>
+                    <input type="password" name="password2" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Niveau scolaire *</label>
+                <select name="level" id="levelSelect" required>
+                    <option value="">Sélectionne ton niveau</option>
+                    <option value="primary">🏫 Primaire (6-11 ans)</option>
+                    <option value="middle">📚 Collège (12-14 ans)</option>
+                    <option value="high">🎓 Lycée (15-17 ans)</option>
+                    <option value="university">🏛️ Université (18-25 ans)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Nom de l'établissement *</label>
+                <input type="text" name="school_name" placeholder="Ex: Lycée Bourguiba, Faculté des Sciences...">
+            </div>
+            
+            <div id="highSchoolFields" class="conditional-field">
+                <div class="form-group">
+                    <label>Spécialité *</label>
+                    <select name="high_school_speciality">
+                        <option value="">Sélectionne ta spécialité</option>
+                        <option value="math">Mathématiques</option>
+                        <option value="sciences">Sciences Expérimentales</option>
+                        <option value="tech">Sciences Techniques</option>
+                        <option value="economics">Économie & Gestion</option>
+                        <option value="letters">Lettres</option>
+                        <option value="sports">Sport</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Année *</label>
+                    <select name="high_school_year">
+                        <option value="">Sélectionne ton année</option>
+                        <option value="1">1ère année</option>
+                        <option value="2">2ème année</option>
+                        <option value="3">3ème année</option>
+                        <option value="4">4ème année</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="universityFields" class="conditional-field">
+                <div class="form-group">
+                    <label>Filière *</label>
+                    <select name="university_major">
+                        <option value="">Sélectionne ta filière</option>
+                        <option value="cs">💻 Informatique / Génie Logiciel</option>
+                        <option value="med">🩺 Médecine / Pharmacie</option>
+                        <option value="eng">🔧 Ingénierie</option>
+                        <option value="business">📈 Commerce / Finance</option>
+                        <option value="law">⚖️ Droit</option>
+                        <option value="economics">📊 Sciences Économiques</option>
+                        <option value="letters">📖 Lettres / Langues</option>
+                        <option value="arts">🎨 Arts / Design</option>
+                        <option value="science">🔬 Sciences Fondamentales</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Année d'étude *</label>
+                    <select name="university_year">
+                        <option value="">Sélectionne ton année</option>
+                        <option value="1">Licence 1</option>
+                        <option value="2">Licence 2</option>
+                        <option value="3">Licence 3</option>
+                        <option value="4">Master 1</option>
+                        <option value="5">Master 2</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-submit">🚀 Créer mon compte étudiant</button>
+        </form>
+        
+        <div class="login-link" style="margin-top: 20px; text-align: center;">
+            Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const levelSelect = document.getElementById('levelSelect');
+    const highSchoolFields = document.getElementById('highSchoolFields');
+    const universityFields = document.getElementById('universityFields');
+    
+    function updateFields() {
+        const level = levelSelect.value;
+        highSchoolFields.classList.remove('visible');
+        universityFields.classList.remove('visible');
+        
+        if (level === 'high') {
+            highSchoolFields.classList.add('visible');
+        } else if (level === 'university') {
+            universityFields.classList.add('visible');
+        }
+    }
+    
+    levelSelect.addEventListener('change', updateFields);
+    updateFields();
+</script>
+{% endblock %}

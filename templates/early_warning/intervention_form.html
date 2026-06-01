@@ -1,0 +1,154 @@
+{% extends 'early_warning/base_early_warning.html' %}
+{% block title %}Créer une intervention - Early Warning{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(139, 0, 0, 0.15);
+    }
+    
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .form-header h1 {
+        color: #8B0000;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .student-info {
+        background: #FFF5F5;
+        border-radius: 16px;
+        padding: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #5C1A1A;
+        margin-bottom: 8px;
+    }
+    
+    .form-group select, .form-group input, .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #F0D0D0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        background: #FFF5F5;
+    }
+    
+    .form-group select:focus, .form-group input:focus, .form-group textarea:focus {
+        border-color: #8B0000;
+        outline: none;
+    }
+    
+    .ai-suggestion-box {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        margin: 20px 0;
+    }
+    
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
+    }
+    
+    .btn-back {
+        display: inline-block;
+        margin-top: 20px;
+        color: #8B0000;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h1>📝 Créer une intervention</h1>
+            <p>Planifiez une action pour l'étudiant</p>
+        </div>
+        
+        <div class="student-info">
+            <strong>👨‍🎓 Étudiant :</strong> {{ alert.risk_score.student_name }} ({{ alert.risk_score.student_id }})<br>
+            <strong>⚠️ Score de risque :</strong> {{ alert.risk_score.risk_score|floatformat:0 }}/100 - 
+            {% if alert.risk_score.risk_level == 'high' %}🔴 Risque Élevé
+            {% elif alert.risk_score.risk_level == 'medium' %}🟠 Risque Moyen
+            {% else %}🟢 Risque Faible{% endif %}
+        </div>
+        
+        {% if alert.ai_suggestion %}
+        <div class="ai-suggestion-box">
+            <strong>🤖 Suggestion IA :</strong>
+            <p style="margin-top: 10px;">{{ alert.ai_suggestion.description }}</p>
+            <small>Confiance: {{ alert.ai_suggestion.confidence_percent }} | 
+            {% if alert.ai_suggestion.fallback_used %}⚠️ Mode fallback{% else %}✅ IA générée{% endif %}</small>
+        </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Type d'intervention *</label>
+                {{ form.action_type }}
+            </div>
+            
+            <div class="form-group">
+                <label>Description *</label>
+                {{ form.description }}
+                {% if form.description.help_text %}
+                <small style="color: #666;">{{ form.description.help_text }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Date limite *</label>
+                {{ form.due_date }}
+            </div>
+            
+            <div class="form-group">
+                <label>Notes (optionnel)</label>
+                {{ form.notes }}
+            </div>
+            
+            <button type="submit" class="btn-submit">✅ Créer l'intervention</button>
+        </form>
+        
+        <div style="text-align: center;">
+            <a href="{% url 'early_warning:alerts_list' %}" class="btn-back">← Retour aux alertes</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Alerte 3alemni</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #8B0000, #C41E3A);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #FFF5F5;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .alert-box {
+            background: white;
+            border-left: 4px solid #8B0000;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .risk-high {
+            color: #8B0000;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #8B0000, #C41E3A);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>⚠️ 3alemni - Alerte Early Warning</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour Professeur,</p>
+            
+            <p>L'étudiant <strong>Ahmed Ben Ali</strong> présente un <span class="risk-high">risque ÉLEVÉ de décrochage scolaire</span>.</p>
+            
+            <div class="alert-box">
+                <h3>📊 Détails de l'alerte :</h3>
+                <ul>
+                    <li>Score de risque : <strong>74/100</strong></li>
+                    <li>Taux d'absence : <strong>25%</strong></li>
+                    <li>Moyenne générale : <strong>8.5/20</strong></li>
+                    <li>Score comportement : <strong>5/10</strong></li>
+                    <li>Classe : <strong>3ème Maths</strong></li>
+                </ul>
+            </div>
+            
+            <div class="alert-box" style="border-left-color: #4facfe;">
+                <h3>🤖 Suggestion IA :</h3>
+                <p>"Organiser une réunion avec les parents pour discuter du taux d'absence élevé (25%), associée à un quiz personnalisé sur les chapitres où les notes sont faibles."</p>
+                <p><small>Confiance : 87% | Basé sur 15 cas similaires</small></p>
+            </div>
+            
+            <a href="http://localhost:8000/warning/alerts/" class="btn">📋 Voir le tableau des alertes</a>
+            
+            <div class="footer">
+                <p>3alemni - Plateforme de détection précoce du décrochage scolaire</p>
+                <p>Cet email a été généré automatiquement, merci de ne pas y répondre.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

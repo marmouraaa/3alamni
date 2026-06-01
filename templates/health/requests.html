@@ -1,0 +1,179 @@
+{% extends 'base1.html' %}
+{% block title %}Demandes — Conseiller{% endblock %}
+
+{% block extra_css %}
+<style>
+.requests-container {
+    padding: 20px 0;
+}
+
+.requests-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.requests-header h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover, .filter-btn.active {
+    background: rgba(67, 233, 123, 0.3);
+    border-color: #43e97b;
+}
+
+.request-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.request-card:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateX(5px);
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.request-id {
+    font-weight: 700;
+    color: #43e97b;
+    font-size: 0.9rem;
+}
+
+.urgency-high { color: #ff6b6b; background: rgba(255,107,107,0.2); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
+.urgency-medium { color: #ffa502; background: rgba(255,165,2,0.2); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
+.urgency-low { color: #43e97b; background: rgba(67,233,123,0.2); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
+
+.ai-badge {
+    background: rgba(67, 233, 123, 0.15);
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.65rem;
+    display: inline-block;
+    margin: 8px 0;
+}
+
+.request-message {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.request-date {
+    font-size: 0.6rem;
+    opacity: 0.4;
+    margin-top: 8px;
+}
+
+.status-pending-badge { background: #ff9800; padding: 2px 8px; border-radius: 12px; font-size: 0.6rem; }
+.status-progress-badge { background: #4facfe; padding: 2px 8px; border-radius: 12px; font-size: 0.6rem; }
+.status-closed-badge { background: #4caf50; padding: 2px 8px; border-radius: 12px; font-size: 0.6rem; }
+
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="requests-container">
+    <div class="requests-header">
+        <h2><i class="fas fa-inbox"></i> Demandes anonymes</h2>
+        <div class="filter-bar">
+            <button class="filter-btn {% if current_filter == 'pending' %}active{% endif %}" onclick="filterRequests('pending')">En attente</button>
+            <button class="filter-btn {% if current_filter == 'in_progress' %}active{% endif %}" onclick="filterRequests('in_progress')">En cours</button>
+            <button class="filter-btn {% if current_filter == 'closed' %}active{% endif %}" onclick="filterRequests('closed')">Clôturées</button>
+            <button class="filter-btn {% if current_filter == 'all' %}active{% endif %}" onclick="filterRequests('all')">Toutes</button>
+        </div>
+    </div>
+
+    <div id="requests-list">
+        {% for req in requests %}
+        <div class="request-card" onclick="window.location.href='/health/chat/{{ req.id }}/'">
+            <div class="request-header">
+                <span class="request-id">{{ req.anonymous_id }}</span>
+                <span class="urgency-{{ req.urgency_level }}">
+                    {% if req.urgency_level == 'high' %}🔴 Urgent
+                    {% elif req.urgency_level == 'medium' %}🟠 Modéré
+                    {% else %}🟢 Faible{% endif %}
+                </span>
+            </div>
+            
+            <div class="ai-badge">
+                🧠 IA: 
+                {% if req.ai_category == 'stress' %}Stress
+                {% elif req.ai_category == 'family' %}Famille
+                {% elif req.ai_category == 'school' %}École
+                {% elif req.ai_category == 'anxiety' %}Anxiété
+                {% else %}Autre{% endif %}
+                ({{ req.ai_confidence|floatformat:0 }}%)
+            </div>
+            
+            <div class="request-message">
+                {{ req.messages.first.content|truncatechars:100 }}
+            </div>
+            
+            <div class="request-date">
+                {{ req.created_at|date:"d/m/Y H:i" }}
+                {% if req.status == 'pending' %}
+                    <span class="status-pending-badge">En attente</span>
+                {% elif req.status == 'in_progress' %}
+                    <span class="status-progress-badge">En cours</span>
+                {% else %}
+                    <span class="status-closed-badge">Clôturée</span>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 10px;"></i>
+            <p>Aucune demande dans cette catégorie</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function filterRequests(status) {
+    window.location.href = `/health/requests/?status=${status}`;
+}
+</script>
+{% endblock %}

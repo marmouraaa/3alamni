@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Inscription Parent - 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #FFF5F5 0%, #F0D0D0 100%);
+        padding: 40px 20px;
+    }
+    .register-card {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(139,0,0,0.15);
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    label {
+        font-weight: 600;
+        color: #5C1A1A;
+        margin-bottom: 8px;
+        display: block;
+    }
+    input, select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #F0D0D0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+    }
+    input:focus, select:focus {
+        border-color: #8B0000;
+        outline: none;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .help-text {
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 5px;
+    }
+    .alert-info {
+        background: #FFF5F5;
+        border-left: 4px solid #8B0000;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-card">
+    <h2 style="color: #8B0000; text-align: center;">👨‍👩‍👧 Inscription Parent</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 30px;">Lie-toi à ton enfant pour suivre ses progrès</p>
+    
+    <div class="alert-info">
+        <strong>ℹ️ Information importante :</strong><br>
+        Pour lier ton enfant, il faut que son compte étudiant existe déjà sur 3alemni.
+        Entre son nom complet, son niveau et sa date de naissance exacts.
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>Prénom *</label>
+            <input type="text" name="first_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Nom *</label>
+            <input type="text" name="last_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Nom d'utilisateur *</label>
+            <input type="text" name="username" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Email *</label>
+            <input type="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Téléphone</label>
+            <input type="tel" name="phone">
+        </div>
+        
+        <div class="form-group">
+            <label>Mot de passe *</label>
+            <input type="password" name="password1" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Confirmer mot de passe *</label>
+            <input type="password" name="password2" required>
+        </div>
+        
+        <hr style="margin: 25px 0;">
+        
+        <h3 style="font-size: 1.1rem; color: #8B0000;">👶 Informations de votre enfant</h3>
+        
+        <div class="form-group">
+            <label>Nom complet de l'enfant *</label>
+            <input type="text" name="child_full_name" placeholder="Prénom Nom" required>
+            <div class="help-text">Entrez exactement comme sur son compte étudiant</div>
+        </div>
+        
+        <div class="form-group">
+            <label>Niveau scolaire *</label>
+            <select name="child_level" required>
+                <option value="">Sélectionnez</option>
+                <option value="primary">🏫 Primaire (6-11 ans)</option>
+                <option value="middle">📚 Collège (12-14 ans)</option>
+                <option value="high">🎓 Lycée (15-17 ans)</option>
+                <option value="university">🏛️ Université (18-25 ans)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Date de naissance de l'enfant *</label>
+            <input type="date" name="child_birth_date" required>
+        </div>
+        
+        <button type="submit" class="btn-submit">📌 Créer mon compte parent</button>
+    </form>
+    
+    <p style="text-align: center; margin-top: 20px;">
+        Déjà un compte ? <a href="{% url 'login' %}" style="color:#8B0000;">Se connecter</a>
+    </p>
+</div>
+{% endblock %}

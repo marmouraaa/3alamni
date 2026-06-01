@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport hebdomadaire - 3alemni</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #8B0000, #C41E3A);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #FFF5F5;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .stats-box {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            background: #F0D0D0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #8B0000, #C41E3A);
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #8B0000, #C41E3A);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📊 Rapport hebdomadaire 3alemni</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour Monsieur Ben Ali,</p>
+            
+            <p>Voici le rapport hebdomadaire des progrès de votre enfant <strong>Ahmed Ben Ali</strong>.</p>
+            
+            <div class="stats-box">
+                <h3>📈 Statistiques de la semaine :</h3>
+                <ul>
+                    <li>Heures d'étude : <strong>5 heures</strong></li>
+                    <li>Quiz complétés : <strong>3</strong></li>
+                    <li>Score de risque actuel : <strong>74/100</strong> (🔴 Risque Élevé)</li>
+                </ul>
+                
+                <h3>📊 Progression :</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 45%;"></div>
+                </div>
+                <p style="text-align: center; font-size: 0.8rem;">45% de l'objectif semestriel</p>
+            </div>
+            
+            <div class="stats-box" style="border-left: 4px solid #4facfe;">
+                <h3>🤖 Analyse IA :</h3>
+                <p>"Ahmed montre une légère amélioration en mathématiques, mais les absences restent préoccupantes. Je suggère de renforcer le suivi à domicile et d'encourager les quiz quotidiens de 15 minutes."</p>
+                <p><small>Confiance : 82%</small></p>
+            </div>
+            
+            <div class="stats-box">
+                <h3>💡 Recommandations :</h3>
+                <ul>
+                    <li>📖 Encourager 15 minutes de quiz par jour</li>
+                    <li>👨‍👩‍👧 Maintenir une communication régulière avec le professeur</li>
+                    <li>📅 Assurer une présence régulière en cours</li>
+                </ul>
+            </div>
+            
+            <a href="http://localhost:8000/parent/dashboard/" class="btn">🔗 Voir le tableau de bord parent</a>
+            
+            <div class="footer">
+                <p>3alemni - Ensemble pour la réussite de vos enfants</p>
+                <p>Rapport généré automatiquement le {{ date }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+{% extends 'base1.html' %}
+{% block title %}Dashboard Conseiller{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #43e97b;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.btn-action {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 12px;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    background: rgba(67, 233, 123, 0.2);
+    border-color: #43e97b;
+}
+
+.category-list {
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 15px;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.category-name {
+    font-size: 0.85rem;
+}
+
+.category-count {
+    background: rgba(67, 233, 123, 0.3);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="container">
+    <h2 style="margin-bottom: 20px;">🧠 Dashboard Conseiller</h2>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ pending_count }}</div>
+            <div class="stat-label">En attente</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ in_progress_count }}</div>
+            <div class="stat-label">En cours</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ closed_count }}</div>
+            <div class="stat-label">Clôturées</div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <a href="{% url 'health_requests' %}?status=pending" class="btn-action">
+            📋 Voir les demandes
+        </a>
+        <a href="{% url 'health_requests' %}?status=in_progress" class="btn-action">
+            💬 Mes discussions
+        </a>
+    </div>
+
+    <div class="category-list">
+        <h4 style="margin-bottom: 15px;">📊 Statistiques par catégorie</h4>
+        {% for stat in category_stats %}
+        <div class="category-item">
+            <span class="category-name">
+                {% if stat.ai_category == 'stress' %}😰 Stress
+                {% elif stat.ai_category == 'family' %}👨‍👩‍👧 Famille
+                {% elif stat.ai_category == 'school' %}📚 École
+                {% elif stat.ai_category == 'anxiety' %}🌪️ Anxiété
+                {% else %}💬 Autre{% endif %}
+            </span>
+            <span class="category-count">{{ stat.count }} demande(s)</span>
+        </div>
+        {% empty %}
+        <p>Aucune donnée</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

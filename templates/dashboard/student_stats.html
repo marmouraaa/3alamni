@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% block title %}Mes Statistiques - 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #FFF5F5 0%, #F0D0D0 100%);
+        min-height: 100vh;
+    }
+    
+    .stats-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .stats-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .stats-header h1 {
+        color: #8B0000;
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    
+    .stats-header p {
+        color: #666;
+        font-size: 1rem;
+    }
+    
+    /* Cartes statistiques */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #8B0000;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    /* Section badges */
+    .badges-section {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 40px;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.1);
+    }
+    
+    .badges-section h2 {
+        color: #8B0000;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .badges-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .badge {
+        background: linear-gradient(135deg, #FFF5F5, #FFE0E0);
+        border-radius: 15px;
+        padding: 15px 20px;
+        text-align: center;
+        min-width: 100px;
+    }
+    
+    .badge-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+    
+    .badge-name {
+        font-weight: 600;
+        color: #8B0000;
+        font-size: 0.8rem;
+    }
+    
+    .badge-locked {
+        opacity: 0.4;
+        filter: grayscale(0.5);
+    }
+    
+    /* Section progression */
+    .progress-section {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 40px;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.1);
+    }
+    
+    .progress-section h2 {
+        color: #8B0000;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+    
+    .progress-item {
+        margin-bottom: 20px;
+    }
+    
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #5C1A1A;
+    }
+    
+    .progress-bar {
+        background: #F0D0D0;
+        border-radius: 10px;
+        height: 12px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        background: linear-gradient(90deg, #8B0000, #C41E3A);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s;
+    }
+    
+    /* Section activités récentes */
+    .activities-section {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.1);
+    }
+    
+    .activities-section h2 {
+        color: #8B0000;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+    
+    .activity-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 0;
+        border-bottom: 1px solid #F0D0D0;
+    }
+    
+    .activity-icon {
+        font-size: 1.2rem;
+        min-width: 40px;
+    }
+    
+    .activity-detail {
+        flex: 1;
+    }
+    
+    .activity-title {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .activity-date {
+        font-size: 0.75rem;
+        color: #999;
+    }
+    
+    .btn-back {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 25px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        color: white;
+        text-decoration: none;
+        border-radius: 30px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .btn-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
+        color: white;
+    }
+    
+    .info-text {
+        text-align: center;
+        color: #999;
+        padding: 40px;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <div class="stats-header">
+        <h1>📊 Mes Statistiques</h1>
+        <p>Bienvenue {{ user.first_name|default:user.username }} ! Voici ton récapitulatif</p>
+    </div>
+    
+    {% if user.student_profile %}
+        {% with profile=user.student_profile %}
+        
+        <!-- Cartes statistiques -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value">{{ profile.total_study_hours|default:0 }}</div>
+                <div class="stat-label">Heures d'étude</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value">{{ profile.current_streak|default:0 }}</div>
+                <div class="stat-label">Jours consécutifs</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value">{{ profile.total_quizzes_completed|default:0 }}</div>
+                <div class="stat-label">Quiz complétés</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value">{{ profile.get_level_display|default:"Non défini" }}</div>
+                <div class="stat-label">Niveau</div>
+            </div>
+        </div>
+        
+        <!-- Badges -->
+        <div class="badges-section">
+            <h2>🏆 Mes Badges</h2>
+            <div class="badges-grid">
+                <div class="badge {% if profile.current_streak < 7 %}badge-locked{% endif %}">
+                    <div class="badge-icon">🔥</div>
+                    <div class="badge-name">Flamme</div>
+                    <small style="font-size: 0.7rem;">7 jours consécutifs</small>
+                </div>
+                <div class="badge {% if profile.total_quizzes_completed < 10 %}badge-locked{% endif %}">
+                    <div class="badge-icon">🧠</div>
+                    <div class="badge-name">Cerveau</div>
+                    <small style="font-size: 0.7rem;">10 quiz complétés</small>
+                </div>
+                <div class="badge badge-locked">
+                    <div class="badge-icon">⭐</div>
+                    <div class="badge-name">Étoile</div>
+                    <small style="font-size: 0.7rem;">Score parfait</small>
+                </div>
+                <div class="badge badge-locked">
+                    <div class="badge-icon">💪</div>
+                    <div class="badge-name">Champion</div>
+                    <small style="font-size: 0.7rem;">1 mois d'utilisation</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progression -->
+        <div class="progress-section">
+            <h2>📈 Ma Progression</h2>
+            <div class="progress-item">
+                <div class="progress-label">
+                    <span>Objectif 100h d'étude</span>
+                    <span>{{ profile.total_study_hours|default:0 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ profile.total_study_hours|default:0 }}%"></div>
+                </div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">
+                    <span>Objectif 30 jours de streak</span>
+                    <span>{{ profile.current_streak|default:0 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ profile.current_streak|default:0 }}%"></div>
+                </div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">
+                    <span>Objectif 50 quiz</span>
+                    <span>{{ profile.total_quizzes_completed|default:0 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ profile.total_quizzes_completed|default:0 }}%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activités récentes -->
+        <div class="activities-section">
+            <h2>🕐 Activités récentes</h2>
+            {% if profile.study_sessions %}
+                <ul class="activity-list">
+                    {% for session in profile.study_sessions.all|slice:":5" %}
+                    <li class="activity-item">
+                        <div class="activity-icon">📖</div>
+                        <div class="activity-detail">
+                            <div class="activity-title">Session d'étude</div>
+                            <div class="activity-date">{{ session.start_time|date:"d/m/Y H:i" }} - {{ session.duration_minutes }} minutes</div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="info-text">
+                    <p>📭 Aucune activité récente</p>
+                    <p>Commence une session d'étude sur le faux iPhone !</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        {% endwith %}
+    {% else %}
+        <div class="info-text">
+            <p>❌ Profil étudiant non trouvé</p>
+            <p>Veuillez contacter l'administrateur.</p>
+        </div>
+    {% endif %}
+    
+    <div style="text-align: center;">
+        <a href="{% url 'iphone_home' %}" class="btn-back">
+            ← Retour au iPhone
+        </a>
+    </div>
+</div>
+{% endblock %}

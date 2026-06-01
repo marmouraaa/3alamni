@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Parent — 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --parent-primary: #E65100;
+    --parent-secondary: #FF9800;
+    --parent-bg: #FFF3E0;
+}
+
+body {
+    background: #FFF3E0;
+}
+
+.parent-header {
+    background: linear-gradient(135deg, #BF360C, #E65100, #FF9800);
+    padding: 25px;
+    border-radius: 0 0 30px 30px;
+    color: white;
+}
+
+.child-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.progress-bar {
+    background: #E0E0E0;
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: #FF9800;
+    height: 100%;
+    width: 0%;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="parent-header">
+    <h1>👪 Dashboard Parent — {{ request.user.first_name }}</h1>
+    <p>Suis les progrès de ton enfant et accompagne-le dans sa réussite</p>
+</div>
+
+<div style="padding: 20px;">
+    <div class="child-card">
+        <h3>🎓 Progrès de {{ child_name|default:"ton enfant" }}</h3>
+        <div style="margin: 15px 0;">
+            <div>Objectif d'étude cette semaine :</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 65%;"></div></div>
+            <div style="margin-top:5px;">3h / 5h réalisées</div>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 15px;">
+            <span>⭐ 847 points</span>
+            <span>📚 12 quiz</span>
+            <span>🏆 2 badges</span>
+        </div>
+        <button style="margin-top:15px; background:#FF9800; color:white; border:none; padding:10px 20px; border-radius:25px;">
+            📊 Rapport hebdomadaire
+        </button>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Conseiller — 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --counselor-primary: #2E7D32;
+    --counselor-secondary: #4CAF50;
+    --counselor-bg: #F1F8E9;
+}
+
+body {
+    background: #F1F8E9;
+}
+
+.counselor-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #4CAF50);
+    padding: 25px 30px;
+    border-radius: 0 0 30px 30px;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.request-card {
+    background: white;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 15px;
+    border-left: 5px solid #4CAF50;
+    transition: all 0.2s;
+}
+
+.request-card.pending { border-left-color: #FF9800; }
+.request-card.in-progress { border-left-color: #2196F3; }
+.request-card.closed { border-left-color: #9E9E9E; opacity: 0.7; }
+
+.timeline-item {
+    border-left: 2px solid #4CAF50;
+    padding-left: 20px;
+    margin-bottom: 15px;
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="counselor-header">
+    <h1>🧠 Dashboard Conseiller — {{ request.user.first_name }}</h1>
+    <p>Accompagnement anonyme • Écoute active • Soutien psychologique</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; padding: 0 20px;">
+    <div>
+        <h3 style="color:#2E7D32;">💬 Demandes en attente</h3>
+        <div class="request-card pending">
+            <strong>🎓 Étudiant #47</strong>
+            <span style="float:right; background:#FF9800; padding:2px 12px; border-radius:20px; font-size:0.7rem;">En attente</span>
+            <div style="margin:10px 0;">"Je stresse trop avant les examens..."</div>
+            <button class="btn-repondre" style="background:#4CAF50; color:white; border:none; padding:8px 20px; border-radius:25px;">Répondre anonymement →</button>
+        </div>
+        <div class="request-card in-progress">
+            <strong>🎓 Étudiant #23</strong>
+            <span style="float:right; background:#2196F3; padding:2px 12px; border-radius:20px; font-size:0.7rem;">En cours</span>
+            <div>"Problèmes familiaux, besoin de parler"</div>
+        </div>
+    </div>
+
+    <div>
+        <h3 style="color:#2E7D32;">📜 Dernières actions</h3>
+        <div class="timeline-item">
+            <strong>15 min</strong> — Réponse envoyée à Étudiant #89
+        </div>
+        <div class="timeline-item">
+            <strong>2h</strong> — Cas #12 clôturé
+        </div>
+        <div class="timeline-item">
+            <strong>hier</strong> — Nouvelle demande catégorisée "Stress"
+        </div>
+    </div>
+</div>
+
+<div style="text-align:center; margin: 30px;">
+    <a href="{% url 'iphone_home' %}" style="background:#2E7D32; color:white; padding:12px 30px; border-radius:30px; text-decoration:none;">
+        ← Retour
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Choisis ton rôle - 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #FFF5F5 0%, #F0D0D0 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .choice-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .role-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 2px solid #F0D0D0;
+        height: 100%;
+    }
+    .role-card:hover {
+        transform: translateY(-5px);
+        border-color: #8B0000;
+        box-shadow: 0 10px 30px rgba(139,0,0,0.15);
+    }
+    .role-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    .role-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #8B0000;
+        margin-bottom: 10px;
+    }
+    .role-desc {
+        color: #666;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="choice-container">
+    <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="color: #8B0000;">✨ Rejoins 3alemni ✨</h1>
+        <p style="color: #666;">Choisis le rôle qui te correspond</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <a href="{% url 'register_student' %}" style="text-decoration: none;">
+                <div class="role-card">
+                    <div class="role-icon">🎓</div>
+                    <div class="role-title">Étudiant</div>
+                    <div class="role-desc">Apprends via les réseaux sociaux, gagne des badges et suis ta progression</div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <a href="{% url 'register_parent' %}" style="text-decoration: none;">
+                <div class="role-card">
+                    <div class="role-icon">👨‍👩‍👧</div>
+                    <div class="role-title">Parent</div>
+                    <div class="role-desc">Suis les progrès de ton enfant et reçois des rapports hebdomadaires</div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <a href="{% url 'register_teacher' %}" style="text-decoration: none;">
+                <div class="role-card">
+                    <div class="role-icon">📚</div>
+                    <div class="role-title">Professeur</div>
+                    <div class="role-desc">Crée des quiz, suis tes élèves et exporte des rapports</div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <a href="{% url 'register_counselor' %}" style="text-decoration: none;">
+                <div class="role-card">
+                    <div class="role-icon">🧠</div>
+                    <div class="role-title">Conseiller scolaire</div>
+                    <div class="role-desc">Aide les étudiants anonymement via chat en temps réel</div>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <p>Déjà un compte ? <a href="{% url 'login' %}" style="color:#8B0000;">Se connecter</a></p>
+    </div>
+</div>
+{% endblock %}

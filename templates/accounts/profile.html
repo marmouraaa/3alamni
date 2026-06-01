@@ -1,0 +1,32 @@
+{% extends 'base1.html' %}
+{% block title %}Mon Profil - 3alemni{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h3>👤 Mon Profil</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Nom d'utilisateur:</strong> {{ user.username }}</p>
+            <p><strong>Nom complet:</strong> {{ user.get_full_name }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Rôle:</strong> {{ user.get_role_display }}</p>
+            <p><strong>Téléphone:</strong> {{ user.phone|default:"Non renseigné" }}</p>
+            
+            {% if user.student_profile %}
+            <hr>
+            <h5>📚 Informations scolaires</h5>
+            <p><strong>Niveau:</strong> {{ user.student_profile.get_level_display }}</p>
+            <p><strong>Établissement:</strong> {{ user.student_profile.school_name|default:"Non renseigné" }}</p>
+            <p><strong>Heures d'étude:</strong> {{ user.student_profile.total_study_hours }}h</p>
+            <p><strong>Streak:</strong> 🔥 {{ user.student_profile.current_streak }} jours</p>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'iphone_home' %}" class="btn btn-secondary">← Retour</a>
+            <a href="{% url 'logout' %}" class="btn btn-danger">Se déconnecter</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

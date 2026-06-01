@@ -1,0 +1,149 @@
+{% extends 'base1.html' %}
+{% block title %}Parler anonymement — 3alemni{% endblock %}
+
+{% block extra_css %}
+<style>
+.health-container {
+    padding: 20px 0;
+}
+
+.health-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.health-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.health-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 24px;
+    padding: 20px;
+    margin: 15px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-control-custom {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 12px 15px;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.form-control-custom:focus {
+    outline: none;
+    border-color: #43e97b;
+}
+
+textarea.form-control-custom {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    border: none;
+    border-radius: 30px;
+    padding: 14px;
+    color: #1a1a2e;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-submit:hover {
+    transform: scale(1.02);
+    box-shadow: 0 5px 20px rgba(67, 233, 123, 0.4);
+}
+
+.anonymity-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(67, 233, 123, 0.1);
+    border-radius: 30px;
+    padding: 8px 16px;
+    margin: 15px 0;
+    font-size: 0.7rem;
+    color: #43e97b;
+}
+
+.info-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+}
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="health-container">
+    <div class="health-header">
+        <h2><i class="fas fa-heartbeat"></i> Parler anonymement</h2>
+        <p>Tu es anonyme, personne ne saura qui tu es</p>
+    </div>
+
+    <div class="health-card">
+        <div class="anonymity-badge">
+            <i class="fas fa-user-secret"></i>
+            <span>Tu parles en tant que {{ request.user.studentprofile.anonymous_id }}</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Catégorie</label>
+                <select name="category" class="form-control-custom" required>
+                    <option value="">Choisis une catégorie</option>
+                    <option value="stress">😰 Stress / Examens</option>
+                    <option value="family">👨‍👩‍👧 Problèmes familiaux</option>
+                    <option value="school">📚 Problèmes scolaires</option>
+                    <option value="anxiety">🌪️ Anxiété / Angoisses</option>
+                    <option value="other">💬 Autre</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Ton message</label>
+                <textarea name="message" class="form-control-custom" 
+                    placeholder="Décris ce que tu ressens... Un conseiller te répondra rapidement"
+                    required></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-paper-plane"></i> Envoyer anonymement
+            </button>
+        </form>
+
+        <div class="info-text">
+            <i class="fas fa-lock"></i> Ton message est anonyme et sécurisé<br>
+            Un conseiller te répondra dans les plus brefs délais
+        </div>
+    </div>
+</div>
+{% endblock %}

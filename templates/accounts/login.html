@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}3alemni — Connexion{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #FFF5F5 0%, #F0D0D0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+
+    .login-wrapper {
+        display: flex;
+        width: 900px;
+        min-height: 550px;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(139, 0, 0, 0.2);
+    }
+
+    .login-left {
+        flex: 1;
+        background: linear-gradient(160deg, #8B0000, #C41E3A, #5C1A1A);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: white;
+        text-align: center;
+    }
+
+    .login-left .logo {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 10px;
+    }
+
+    .login-left .arabic {
+        font-size: 1.5rem;
+        opacity: 0.8;
+        margin-bottom: 30px;
+    }
+
+    .login-left .tagline {
+        font-size: 0.95rem;
+        opacity: 0.7;
+        line-height: 1.6;
+        max-width: 250px;
+    }
+
+    .login-left .icons-row {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        font-size: 1.8rem;
+    }
+
+    .login-right {
+        flex: 1;
+        background: white;
+        padding: 50px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .login-right h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #8B0000;
+        margin-bottom: 5px;
+    }
+
+    .login-right .subtitle {
+        color: #999;
+        font-size: 0.9rem;
+        margin-bottom: 35px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #5C1A1A;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-wrapper i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #ccc;
+        font-size: 0.9rem;
+    }
+
+    .input-wrapper input {
+        width: 100%;
+        padding: 12px 15px 12px 40px;
+        border: 2px solid #F0D0D0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        background: #FFF5F5;
+        color: #333;
+    }
+
+    .input-wrapper input:focus {
+        border-color: #8B0000;
+        box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+        outline: none;
+        background: white;
+    }
+
+    .btn-login {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #8B0000, #C41E3A);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+        margin-top: 10px;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 0, 0, 0.4);
+    }
+
+    .register-link {
+        text-align: center;
+        margin-top: 25px;
+        font-size: 0.88rem;
+        color: #999;
+    }
+
+    .register-link a {
+        color: #8B0000;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+
+    .error-msg {
+        background: #FFF0F0;
+        border-left: 4px solid #C41E3A;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-size: 0.85rem;
+        color: #C41E3A;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+
+    <div class="login-left">
+        <div class="logo">3alemni</div>
+        <div class="arabic">علمني</div>
+        <div class="tagline">
+            La plateforme qui transforme les réseaux sociaux en levier éducatif pour les jeunes tunisiens
+        </div>
+        <div class="icons-row">
+            🎓 📚 🧠 ⏱️
+        </div>
+    </div>
+
+    <div class="login-right">
+        <h2>Bon retour ! 👋</h2>
+        <p class="subtitle">Connecte-toi pour continuer ton aventure</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error-msg">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Nom d'utilisateur</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" name="username" placeholder="Ton nom d'utilisateur" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Mot de passe</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password" placeholder="Ton mot de passe" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                Se connecter
+            </button>
+        </form>
+
+        <div class="register-link">
+            Pas encore de compte ?
+            <a href="{% url 'register_choice' %}">S'inscrire gratuitement</a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

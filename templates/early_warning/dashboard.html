@@ -1,0 +1,207 @@
+{% extends 'early_warning/base_early_warning.html' %}
+{% load static %}
+
+{% block title %}Dashboard Early Warning{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">📊 Dashboard d'Alerte Précoce</h1>
+        </div>
+    </div>
+
+    <!-- Statistiques Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Étudiants</h5>
+                    <h2 class="card-text">{{ total_students|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">⚠️ Risque Élevé</h5>
+                    <h2 class="card-text">{{ high_risk_count|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">🟠 Risque Moyen</h5>
+                    <h2 class="card-text">{{ medium_risk_count|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">✅ Alertes Actives</h5>
+                    <h2 class="card-text">{{ active_alerts|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Distribution des Risques</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskPieChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Top 10 Étudiants à Risque</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="topRisksChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertes Actives -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>🚨 Alertes Actives</h5>
+                    <div>
+                        <a href="{% url 'early_warning:export_csv' %}" class="btn btn-sm btn-success">
+                            📥 Export CSV
+                        </a>
+                        <!-- CORRECTION: Utiliser le nom correct de l'URL -->
+                        <a href="{% url 'early_warning:export_pdf' %}" class="btn btn-sm btn-danger">
+                            📄 Export PDF
+                        </a>
+                        <a href="{% url 'early_warning:import_csv' %}" class="btn btn-sm btn-primary">
+                            📤 Import CSV
+                        </a>
+                        <a href="{% url 'early_warning:threshold_config' %}" class="btn btn-sm btn-info">
+                            ⚙️ Configurer
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Étudiant</th>
+                                        <th>Classe</th>
+                                        <th>Score</th>
+                                        <th>Niveau</th>
+                                        <th>Date</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for alert in alerts %}
+                                    <tr>
+                                        <td>{{ alert.risk_score.student_name }}</td>
+                                        <td>{{ alert.risk_score.class_name }}</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar {% if alert.risk_score.risk_score >= 70 %}bg-danger{% elif alert.risk_score.risk_score >= 40 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ alert.risk_score.risk_score }}%;" 
+                                                     aria-valuenow="{{ alert.risk_score.risk_score }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    {{ alert.risk_score.risk_score|floatformat:0 }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if alert.risk_score.risk_level == 'high' %}
+                                                <span class="badge bg-danger">🔴 Élevé</span>
+                                            {% elif alert.risk_score.risk_level == 'medium' %}
+                                                <span class="badge bg-warning">🟠 Moyen</span>
+                                            {% else %}
+                                                <span class="badge bg-success">🟢 Faible</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ alert.created_at|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <span class="badge {% if alert.status == 'pending' %}bg-danger{% elif alert.status == 'in_progress' %}bg-warning{% else %}bg-success{% endif %}">
+                                                {{ alert.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'early_warning:intervention_create' alert.id %}" class="btn btn-sm btn-primary">
+                                                Intervenir
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Aucune alerte active pour le moment.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Graphique camembert
+    const pieCtx = document.getElementById('riskPieChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Risque Élevé', 'Risque Moyen', 'Risque Faible'],
+            datasets: [{
+                data: [{{ high_risk_count|default:0 }}, {{ medium_risk_count|default:0 }}, {{ low_risk_count|default:0 }}],
+                backgroundColor: ['#dc3545', '#ffc107', '#28a745'],
+            }]
+        }
+    });
+    
+    // Graphique top risques
+    const barCtx = document.getElementById('topRisksChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for risk in top_risks %}'{{ risk.student_name|truncatechars:15 }}',{% endfor %}],
+            datasets: [{
+                label: 'Score de Risque',
+                data: [{% for risk in top_risks %}{{ risk.risk_score }},{% endfor %}],
+                backgroundColor: '#ffc107',
+                borderColor: '#ff9800',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Score (0-100)'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
