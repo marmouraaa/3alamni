@@ -1,78 +1,291 @@
 {% extends 'base1.html' %}
-{% block title %}Study With Me{% endblock %}
+{% block title %}Study With Me - 3alemni{% endblock %}
 
 {% block extra_css %}
 <style>
-/* Garde tous tes styles existants, ils sont très bien ! */
-/* Ajoute juste ceci à la fin : */
-
-#selection-view {
-    transition: all 0.3s ease;
-}
-
-.phone-content {
-    position: relative;
-    min-height: 600px;
-}
+    .study-container {
+        padding: 20px;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+    
+    .study-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .study-header h2 {
+        color: #FFD700;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .study-header p {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.9rem;
+    }
+    
+    /* Statistiques utilisateur */
+    .stats-row {
+        display: flex;
+        justify-content: space-around;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 15px;
+        margin-bottom: 25px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #FFD700;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.6);
+    }
+    
+    /* Grille des durées */
+    .time-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 30px;
+    }
+    
+    .time-card {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 15px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .time-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .time-card.selected {
+        border-color: #FFD700;
+        background: rgba(255,215,0,0.2);
+    }
+    
+    .minutes {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .unit {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.6);
+    }
+    
+    /* Bouton start */
+    .start-button {
+        width: 100%;
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 20px;
+    }
+    
+    .start-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(76,175,80,0.4);
+    }
+    
+    /* Info text */
+    .info-text {
+        text-align: center;
+        color: rgba(255,255,255,0.5);
+        font-size: 0.75rem;
+        padding: 15px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 15px;
+    }
+    
+    .info-text i {
+        margin-right: 5px;
+    }
+    
+    /* Mode Lock (overlay) */
+    .lock-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .lock-card {
+        text-align: center;
+        padding: 30px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 40px;
+        width: 85%;
+        max-width: 300px;
+        animation: slideUp 0.5s ease;
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .big-timer {
+        font-size: 3rem;
+        font-weight: 800;
+        font-family: monospace;
+        color: #FFD700;
+        margin: 20px 0;
+        letter-spacing: 5px;
+    }
+    
+    .lock-message {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.8rem;
+    }
+    
+    .completion-badge {
+        font-size: 4rem;
+        margin-bottom: 15px;
+        animation: bounce 0.5s ease;
+    }
+    
+    @keyframes bounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+    
+    /* Badge gagné */
+    .badge-earned {
+        background: rgba(255,215,0,0.3);
+        border-radius: 50px;
+        padding: 10px 20px;
+        margin-top: 15px;
+        display: inline-block;
+    }
+    
+    /* Message de progression */
+    .progress-note {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.4);
+        text-align: center;
+        margin-top: 15px;
+    }
 </style>
 {% endblock %}
 
 {% block phone_content %}
 <div class="study-container" id="selection-view">
     <div class="study-header">
-        <br>
-        <h2><i class="fas fa-book-open"></i> Study With Me</h2>
-        <p>Choisis ta durée d'étude</p>
+        <h2><i class="fas fa-brain"></i> Study With Me</h2>
+        <p>Choisis ta durée d'étude et reste concentré(e)</p>
     </div>
-
+    
+    <!-- Statistiques rapides -->
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-value">{{ total_minutes|default:0 }}</div>
+            <div class="stat-label">Minutes étudiées</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ study_sessions|default:0 }}</div>
+            <div class="stat-label">Sessions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ current_streak|default:0 }}</div>
+            <div class="stat-label">🔥 Série</div>
+        </div>
+    </div>
+    
     <div class="time-grid">
-        <div class="time-card" data-seconds="900">
-            <div class="minutes">00:15</div>
+        <div class="time-card" data-seconds="9">
+            <div class="minutes">15</div>
             <div class="unit">minutes</div>
         </div>
         <div class="time-card" data-seconds="1800">
-            <div class="minutes">00:30</div>
+            <div class="minutes">30</div>
             <div class="unit">minutes</div>
         </div>
         <div class="time-card" data-seconds="2700">
-            <div class="minutes">00:45</div>
+            <div class="minutes">45</div>
             <div class="unit">minutes</div>
         </div>
         <div class="time-card" data-seconds="3600">
-            <div class="minutes">1h:00</div>
+            <div class="minutes">1h</div>
             <div class="unit">heure</div>
         </div>
         <div class="time-card" data-seconds="5400">
-            <div class="minutes">1h:30</div>
+            <div class="minutes">1h30</div>
             <div class="unit">heures</div>
         </div>
         <div class="time-card" data-seconds="7200">
-            <div class="minutes">2h:00</div>
+            <div class="minutes">2h</div>
             <div class="unit">heures</div>
         </div>
         <div class="time-card" data-seconds="9000">
-            <div class="minutes">2h:30</div>
+            <div class="minutes">2h30</div>
             <div class="unit">heures</div>
         </div>
         <div class="time-card" data-seconds="10800">
-            <div class="minutes">3h:00</div>
+            <div class="minutes">3h</div>
             <div class="unit">heures</div>
         </div>
     </div>
-
+    
     <button class="start-button" onclick="startStudy()">
         <i class="fas fa-play"></i> Commencer l'étude
     </button>
-
+    
     <div class="info-text">
         <i class="fas fa-lock"></i> Pendant l'étude, l'écran est bloqué<br>
-        Termine pour gagner un badge
+        Termine ta session pour gagner des points et des badges !
+    </div>
+    <div class="progress-note">
+        <i class="fas fa-chart-line"></i> Plus tu étudies longtemps, plus tu gagnes de points !
     </div>
 </div>
 
 <script>
 let selectedSeconds = 3600;
 
+// Sélection du temps
 document.querySelectorAll('.time-card').forEach(card => {
     card.addEventListener('click', function() {
         document.querySelectorAll('.time-card').forEach(c => c.classList.remove('selected'));
@@ -82,6 +295,7 @@ document.querySelectorAll('.time-card').forEach(card => {
     if (card.dataset.seconds == '3600') card.classList.add('selected');
 });
 
+// Récupérer le token CSRF
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -97,7 +311,12 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// Démarrer l'étude
 function startStudy() {
+    const btn = document.querySelector('.start-button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Démarrage...';
+    
     fetch('/study/api/start/', {
         method: 'POST',
         headers: {
@@ -111,36 +330,41 @@ function startStudy() {
         if (data.success) {
             enterLockMode(selectedSeconds);
         } else {
-            alert('Erreur: ' + (data.error || 'Impossible de démarrer la session'));
+            alert('❌ ' + (data.error || 'Impossible de démarrer la session'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play"></i> Commencer l\'étude';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Erreur de connexion au serveur');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> Commencer l\'étude';
     });
 }
 
+// Mode verrouillé
 function enterLockMode(totalSeconds) {
     let timeLeft = totalSeconds;
+    let timerInterval;
     
     // Cacher la vue de sélection
     document.getElementById('selection-view').style.display = 'none';
     
-    // Créer l'overlay à l'intérieur de l'iPhone
+    // Créer l'overlay
     const lockDiv = document.createElement('div');
     lockDiv.className = 'lock-overlay';
     lockDiv.id = 'lock-overlay';
     lockDiv.innerHTML = `
         <div class="lock-card">
-            <i class="fas fa-lock" style="font-size:2rem; color:#4facfe; margin-bottom:15px;"></i>
-            <h3 style="color:white; margin-bottom:10px; font-size:1.1rem;">Mode Étude</h3>
+            <i class="fas fa-lock" style="font-size:2.5rem; color:#FFD700; margin-bottom:15px;"></i>
+            <h3 style="color:white; margin-bottom:10px;">🎯 Mode Étude</h3>
             <div class="big-timer" id="lockTimer">${formatTime(timeLeft)}</div>
             <p class="lock-message"><i class="fas fa-brain"></i> Reste concentré(e) !</p>
             <p class="lock-message" style="margin-top:15px; font-size:0.6rem;">Ne quitte pas cette page</p>
         </div>
     `;
     
-    // Trouver le conteneur principal
     const phoneContent = document.querySelector('.phone-content');
     if (phoneContent) {
         phoneContent.appendChild(lockDiv);
@@ -148,12 +372,13 @@ function enterLockMode(totalSeconds) {
         document.body.appendChild(lockDiv);
     }
     
-    const timerInterval = setInterval(() => {
+    // Animation du timer
+    timerInterval = setInterval(() => {
         timeLeft--;
         const timerElem = document.getElementById('lockTimer');
         if (timerElem) {
             timerElem.innerText = formatTime(timeLeft);
-            timerElem.style.transform = 'scale(1.1)';
+            timerElem.style.transform = 'scale(1.05)';
             setTimeout(() => {
                 timerElem.style.transform = 'scale(1)';
             }, 100);
@@ -191,15 +416,33 @@ function completeStudy(lockDiv) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.badge) {
+        if (data.success) {
+            let message = '';
+            let badgeHtml = '';
+            
+            if (data.points_earned) {
+                message = `<p style="color:#4CAF50; margin:10px 0;">✨ +${data.points_earned} points ✨</p>`;
+            }
+            
+            if (data.badge) {
+                badgeHtml = `
+                    <div class="badge-earned">
+                        <span style="font-size:1.5rem;">${data.badge.icon || '🏆'}</span>
+                        <strong style="color:#FFD700;"> ${data.badge.name}</strong>
+                        <p style="font-size:0.7rem; margin-top:5px;">${data.badge.description || ''}</p>
+                    </div>
+                `;
+            }
+            
             lockDiv.innerHTML = `
                 <div class="lock-card">
-                    <div class="completion-badge">${data.badge.icon || '🏆'}</div>
-                    <h2 style="color:white; font-size:1.3rem;">Félicitations !</h2>
-                    <p style="color:#4facfe; margin:15px 0; font-weight:500;">Badge débloqué</p>
-                    <p style="color:white; font-size:1rem; font-weight:bold;">${data.badge.name}</p>
-                    <p style="color:rgba(255,255,255,0.7); font-size:0.8rem; margin-top:10px;">${data.badge.description || ''}</p>
-                    <button onclick="goToHome()" style="background:#4facfe; border:none; padding:10px 25px; border-radius:25px; color:white; margin-top:20px; cursor:pointer;">
+                    <div class="completion-badge">🎉</div>
+                    <h2 style="color:white; font-size:1.3rem;">Session terminée !</h2>
+                    <p style="color:#4CAF50; margin:15px 0;">Bravo pour ton étude !</p>
+                    ${message}
+                    ${badgeHtml}
+                    ${data.total_minutes ? `<p style="color:rgba(255,255,255,0.6); font-size:0.7rem; margin-top:10px;">📊 Total: ${data.total_minutes} minutes d'étude</p>` : ''}
+                    <button onclick="goToHome()" style="background:linear-gradient(135deg, #FFD700, #FFA500); border:none; padding:12px 30px; border-radius:30px; color:#1a1a2e; font-weight:bold; margin-top:20px; cursor:pointer;">
                         <i class="fas fa-home"></i> Retour à l'accueil
                     </button>
                 </div>
@@ -207,10 +450,10 @@ function completeStudy(lockDiv) {
         } else {
             lockDiv.innerHTML = `
                 <div class="lock-card">
-                    <div class="completion-badge">✅</div>
-                    <h2 style="color:white; font-size:1.3rem;">Session terminée !</h2>
-                    <p style="color:#4facfe; margin:15px 0;">Bravo pour ton étude !</p>
-                    <button onclick="goToHome()" style="background:#4facfe; border:none; padding:10px 25px; border-radius:25px; color:white; margin-top:20px; cursor:pointer;">
+                    <div class="completion-badge">⚠️</div>
+                    <h2 style="color:white; font-size:1.3rem;">Erreur</h2>
+                    <p style="color:#f44336; margin:15px 0;">Problème de sauvegarde</p>
+                    <button onclick="goToHome()" style="background:#4facfe; border:none; padding:12px 30px; border-radius:30px; color:white; margin-top:20px; cursor:pointer;">
                         <i class="fas fa-home"></i> Retour à l'accueil
                     </button>
                 </div>
@@ -224,8 +467,8 @@ function completeStudy(lockDiv) {
             <div class="lock-card">
                 <div class="completion-badge">⚠️</div>
                 <h2 style="color:white; font-size:1.3rem;">Erreur</h2>
-                <p style="color:red; margin:15px 0;">Problème de sauvegarde</p>
-                <button onclick="goToHome()" style="background:#4facfe; border:none; padding:10px 25px; border-radius:25px; color:white; margin-top:20px; cursor:pointer;">
+                <p style="color:#f44336; margin:15px 0;">Problème de connexion</p>
+                <button onclick="goToHome()" style="background:#4facfe; border:none; padding:12px 30px; border-radius:30px; color:white; margin-top:20px; cursor:pointer;">
                     <i class="fas fa-home"></i> Retour à l'accueil
                 </button>
             </div>

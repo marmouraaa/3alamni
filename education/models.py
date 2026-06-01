@@ -1,87 +1,140 @@
 from django.db import models
-from accounts.models import User, StudentProfile
+from django.contrib.auth import get_user_model
+import json
 
-class Course(models.Model):
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    subject = models.CharField(max_length=100)
-    pdf_file = models.FileField(upload_to='courses/')
-    extracted_text = models.TextField(null=True, blank=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+User = get_user_model()
 
-    def __str__(self):
-        return f"{self.title} - {self.subject}"
 
-class QuizRequest(models.Model):
-    GAME_TYPES = [
-        ('dragdrop','Drag & Drop'),
-        ('flashcard','Flashcard'),
-        ('fillblank','Remplir les blancs'),
-        ('wordsearch','Mots cachés')
-    ]
-    NETWORKS = [
-        ('tiktok','TikTok'),
-        ('instagram','Instagram'),
-        ('snapchat','Snapchat'),
-        ('facebook','Facebook')
-    ]
-    STATUS = [
-        ('pending','En attente'),
-        ('generated','Généré'),
-        ('validated','Validé'),
-        ('published','Publié')
-    ]
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
-    num_questions = models.IntegerField()
-    specific_part = models.CharField(max_length=200, null=True, blank=True)
-    game_type = models.CharField(max_length=20, choices=GAME_TYPES)
-    target_network = models.CharField(max_length=20, choices=NETWORKS)
-    ai_explanation = models.TextField(null=True)       # Track E
-    status = models.CharField(max_length=20, choices=STATUS, default='pending')
+class Subject(models.Model):
+    """Matière scolaire"""
+    name = models.CharField(max_length=100, unique=True)
+    icon = models.CharField(max_length=50, default='fas fa-book')
+    color = models.CharField(max_length=20, default='#667eea')
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Quiz Request - {self.course} - {self.game_type}"
-
-class Quiz(models.Model):
-    quiz_request = models.OneToOneField(QuizRequest, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    game_type = models.CharField(max_length=20)
-    target_network = models.CharField(max_length=20)
-    is_published = models.BooleanField(default=False)
-    published_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.title} ({self.target_network})"
-
-class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
-    text = models.TextField()
-    order = models.IntegerField()
-    ai_generated = models.BooleanField(default=True)
+        return self.name
 
     class Meta:
-        ordering = ['order']
+        ordering = ['name']
+
+
+class Quiz(models.Model):
+    """Quiz provenant d'OpenTrivia"""
+    
+    DIFFICULTY_LEVELS = [
+        ('easy', 'Facile'),
+        ('medium', 'Moyen'),
+        ('hard', 'Difficile'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Brouillon'),
+        ('published', 'Publié'),
+    ]
+    
+    SOURCE_CHOICES = [
+        ('teacher', 'Professeur'),
+        ('trivia', 'OpenTrivia Database'),
+    ]
+    
+    # Métadonnées
+    title = models.CharField(max_length=200)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='quizzes')
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_quizzes')
+    
+    # Contenu du quiz
+    question = models.TextField()
+    options = models.JSONField(default=list)
+    correct_answer = models.CharField(max_length=500)
+    explanation = models.TextField(blank=True)
+    
+    # Configuration
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_LEVELS, default='medium')
+    
+    # Source
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='trivia')
+    trivia_category_id = models.IntegerField(null=True, blank=True)
+    trivia_category_name = models.CharField(max_length=100, blank=True)
+    
+    # Statut
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='published')
+    validated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='validated_quizzes')
+    validated_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    
+    # Métriques sociales
+    likes = models.IntegerField(default=0)
+    shares = models.IntegerField(default=0)
+    comments_count = models.IntegerField(default=0)
+    
+    # Statistiques
+    times_played = models.IntegerField(default=0)
+    success_rate = models.FloatField(default=0.0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Q{self.order}: {self.text[:50]}"
+        return f"{self.title} - {self.subject.name}"
 
-class Answer(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
-    text = models.TextField()
+    def get_options_list(self):
+        if isinstance(self.options, str):
+            return json.loads(self.options)
+        return self.options or []
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class QuizAttempt(models.Model):
+    """Tentative de quiz par un étudiant"""
+    
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
+    
+    answer = models.CharField(max_length=500)
     is_correct = models.BooleanField(default=False)
-
+    time_taken = models.IntegerField(default=0)
+    
+    score = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
     def __str__(self):
-        return f"{'✓' if self.is_correct else '✗'} {self.text[:50]}"
+        return f"{self.student.username} - {self.quiz.title} - {'Correct' if self.is_correct else 'Incorrect'}"
 
-class StudentScore(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    score = models.FloatField()
-    completed_at = models.DateTimeField(auto_now_add=True)
-    time_spent = models.IntegerField()     # secondes
 
+class Badge(models.Model):
+    """Badge de réussite"""
+    
+    BADGE_TYPES = [
+        ('first_quiz', 'Premier quiz'),
+        ('perfect_score', 'Score parfait'),
+        ('quiz_master', 'Maître des quiz'),
+        ('streak_5', 'Série de 5'),
+        ('streak_10', 'Série de 10'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    badge_type = models.CharField(max_length=50, choices=BADGE_TYPES, unique=True)
+    description = models.TextField()
+    icon = models.CharField(max_length=50, default='fas fa-medal')
+    required_correct_answers = models.IntegerField(default=0)
+    
     def __str__(self):
-        return f"{self.student} - {self.quiz} - {self.score}"
+        return self.name
+
+
+class UserBadge(models.Model):
+    """Badges obtenus par un utilisateur"""
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'badge']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.name}"

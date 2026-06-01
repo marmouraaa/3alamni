@@ -1,6 +1,123 @@
-{% extends 'base.html' %}
-{% block title %}Snapchat — 3alemni{% endblock %}
-{% block content %}
-<h1 style="text-align:center;margin-top:50px">Snapchat Feed — Coming Soon</h1>
-<a href="{% url 'iphone_home' %}" style="display:block;text-align:center">← Retour</a>
+{% extends 'base1.html' %}
+{% block title %}Snapchat - 3alemni{% endblock %}
+
+{% block phone_content %}
+<div style="background: #FFFC00; min-height: 100vh; padding: 20px;">
+    <div style="background: #FFFC00; padding: 10px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <i class="fas fa-user" style="font-size: 1.3rem;"></i>
+            <h1 style="font-size: 1.5rem; margin: 0; font-weight: 800;">3alemni</h1>
+            <i class="fas fa-search" style="font-size: 1.3rem;"></i>
+        </div>
+    </div>
+
+    {% for quiz in quizzes %}
+    <div class="snap-quiz" data-quiz-id="{{ quiz.id }}" style="background: white; border-radius: 20px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <div style="background: #FFFC00; padding: 8px; text-align: center;">
+            <span style="font-weight: bold;">⚠️ ÉPHÉMÈRE - 30 secondes</span>
+        </div>
+        <div style="padding: 25px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <div style="width: 40px; height: 40px; background: #FFFC00; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-ghost"></i>
+                </div>
+                <div>
+                    <div style="font-weight: bold;">{{ quiz.subject.name }}</div>
+                    <div style="font-size: 0.7rem; color: gray;">Snap éducatif</div>
+                </div>
+            </div>
+            
+            <p style="font-size: 1rem; margin-bottom: 20px;">{{ quiz.question }}</p>
+            
+            <div id="timer-{{ quiz.id }}" style="text-align: center; font-size: 2rem; font-weight: bold; font-family: monospace; margin: 15px 0;">00:30</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for option in quiz.get_options_list %}
+                <button class="snap-option" data-option="{{ option }}" style="background: #f5f5f5; border: none; padding: 12px; border-radius: 10px; text-align: left; cursor: pointer;">
+                    {{ option }}
+                </button>
+                {% endfor %}
+            </div>
+            
+            <button class="snap-submit" data-quiz-id="{{ quiz.id }}" style="background: #FFFC00; border: none; padding: 12px; border-radius: 25px; width: 100%; margin-top: 20px; font-weight: bold;">
+                Envoyer 💛
+            </button>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 50px 20px; background: white; border-radius: 20px;">
+        <i class="fas fa-camera" style="font-size: 3rem; color: #ccc;"></i>
+        <p style="margin-top: 15px;">Aucun Snap éducatif</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.querySelectorAll('.snap-quiz').forEach(quiz => {
+    let timeLeft = 30;
+    const quizId = quiz.dataset.quizId;
+    const timerDisplay = quiz.querySelector(`#timer-${quizId}`);
+    let timerInterval;
+    
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `00:${String(seconds).padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerDisplay.textContent = "00:00";
+                quiz.querySelectorAll('.snap-option, .snap-submit').forEach(el => {
+                    el.disabled = true;
+                    el.style.opacity = '0.5';
+                });
+                alert('⏰ Temps écoulé ! Snap expiré.');
+            }
+        }, 1000);
+    }
+    
+    startTimer();
+    
+    let selectedOption = null;
+    quiz.querySelectorAll('.snap-option').forEach(opt => {
+        opt.addEventListener('click', function() {
+            quiz.querySelectorAll('.snap-option').forEach(o => {
+                o.style.background = '#f5f5f5';
+            });
+            this.style.background = '#FFFC00';
+            selectedOption = this.dataset.option;
+        });
+    });
+    
+    quiz.querySelector('.snap-submit').addEventListener('click', function() {
+        if (!selectedOption) {
+            alert('Choisis une réponse !');
+            return;
+        }
+        
+        clearInterval(timerInterval);
+        
+        fetch(`/education/api/submit/${quizId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ answer: selectedOption, time_taken: 30 - timeLeft, network: 'snapchat' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_correct) {
+                alert('🎉 Snap validé ! +100 points');
+                quiz.style.background = '#4CAF50';
+            } else {
+                alert(`❌ Snap raté ! Réponse: ${data.correct_answer}`);
+                quiz.style.background = '#f44336';
+            }
+            setTimeout(() => location.reload(), 2000);
+        });
+    });
+});
+</script>
 {% endblock %}

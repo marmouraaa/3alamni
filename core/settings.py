@@ -36,10 +36,8 @@ INSTALLED_APPS = [
     'health',
     'education',
     'study',
-    'parental',
     'dashboard',
     'audit',
-    'api',
 ]
 
 MIDDLEWARE = [
@@ -93,6 +91,7 @@ ASGI_APPLICATION = 'core.asgi.application'
 # ─────────────────────────────────────────────
 #  CHANNELS (WebSocket)
 # ─────────────────────────────────────────────
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',

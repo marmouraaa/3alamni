@@ -1,6 +1,522 @@
-{% extends 'base.html' %}
-{% block title %}Facebook — 3alemni{% endblock %}
-{% block content %}
-<h1 style="text-align:center;margin-top:50px">Facebook Feed — Coming Soon</h1>
-<a href="{% url 'iphone_home' %}" style="display:block;text-align:center">← Retour</a>
+{% extends 'base1.html' %}
+{% block title %}3alemni — Facebook{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link href="{% static 'css/facebook.css' %}" rel="stylesheet">
+<style>
+    /* Styles Facebook - Bleu caractéristique */
+    .fb-header {
+        background: #1877F2;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        color: white;
+    }
+    
+    .fb-logo {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+    
+    .fb-icons {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .fb-icons i {
+        font-size: 1.2rem;
+    }
+    
+    .create-post {
+        background: white;
+        padding: 10px;
+        margin: 10px;
+        border-radius: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .create-post-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e4e6eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .create-post-input {
+        flex: 1;
+        background: #f0f2f5;
+        border: none;
+        border-radius: 25px;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
+    
+    .fb-post {
+        background: white;
+        margin: 10px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .post-header-fb {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        gap: 10px;
+    }
+    
+    .post-avatar-fb {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: #e4e6eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .post-user-info {
+        flex: 1;
+    }
+    
+    .post-user-name {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #050505;
+    }
+    
+    .post-time-fb {
+        font-size: 0.7rem;
+        color: #65676b;
+    }
+    
+    .post-menu-fb {
+        color: #65676b;
+        cursor: pointer;
+    }
+    
+    .post-content {
+        padding: 0 12px 12px;
+    }
+    
+    .fb-quiz-card {
+        background: #f0f2f5;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    
+    .fb-quiz-title {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #1877F2;
+    }
+    
+    .fb-question {
+        font-size: 1rem;
+        margin-bottom: 15px;
+        color: #050505;
+    }
+    
+    .fb-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .fb-option {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #e4e6eb;
+    }
+    
+    .fb-option:hover {
+        background: #e7f3ff;
+        border-color: #1877F2;
+    }
+    
+    .fb-option.selected {
+        background: #1877F2;
+        color: white;
+        border-color: #1877F2;
+    }
+    
+    .fb-stats {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-top: 1px solid #e4e6eb;
+        border-bottom: 1px solid #e4e6eb;
+        color: #65676b;
+        font-size: 0.8rem;
+    }
+    
+    .fb-actions {
+        display: flex;
+        justify-content: space-around;
+        padding: 8px;
+    }
+    
+    .fb-action {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        color: #65676b;
+    }
+    
+    .fb-action:hover {
+        background: #f0f2f5;
+    }
+    
+    .fb-action.active {
+        color: #1877F2;
+    }
+    
+    .fb-action i {
+        font-size: 1.2rem;
+    }
+    
+    .comment-section-fb {
+        padding: 10px;
+        background: #f0f2f5;
+        border-top: 1px solid #e4e6eb;
+    }
+    
+    .comment-input-fb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .comment-input-fb input {
+        flex: 1;
+        background: white;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 15px;
+        font-size: 0.85rem;
+    }
+    
+    .share-options {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 20px 20px 0 0;
+        padding: 20px;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .share-options.show {
+        transform: translateY(0);
+    }
+    
+    .share-option {
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        border-radius: 10px;
+    }
+    
+    .share-option:hover {
+        background: #f0f2f5;
+    }
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="fb-header">
+    <div class="fb-logo">3alemni</div>
+    <div class="fb-icons">
+        <i class="fas fa-user-friends"></i>
+        <i class="fas fa-bell"></i>
+        <i class="fas fa-bars"></i>
+    </div>
+</div>
+
+<div class="create-post">
+    <div class="create-post-avatar">😊</div>
+    <div class="create-post-input" onclick="alert('Publier un post sur votre progression!')">
+        Quoi de neuf, {{ request.user.first_name }}?
+    </div>
+</div>
+
+{% for quiz in quizzes %}
+<div class="fb-post" data-quiz-id="{{ quiz.id }}">
+    <div class="post-header-fb">
+        <div class="post-avatar-fb">📚</div>
+        <div class="post-user-info">
+            <div class="post-user-name">Groupe 3alemni Éducation</div>
+            <div class="post-time-fb">{{ quiz.time_ago|default:"Il y a 2 heures" }} · <i class="fas fa-globe"></i></div>
+        </div>
+        <div class="post-menu-fb">
+            <i class="fas fa-ellipsis-h"></i>
+        </div>
+    </div>
+    
+    <div class="post-content">
+        <div class="fb-quiz-card">
+            <div class="fb-quiz-title">
+                <i class="fas fa-graduation-cap"></i> Quiz - {{ quiz.subject }}
+            </div>
+            <div class="fb-question">{{ quiz.question }}</div>
+            <div class="fb-options">
+                {% for option in quiz.options_list %}
+                <div class="fb-option" data-option="{{ option }}">
+                    {{ option }}
+                </div>
+                {% endfor %}
+            </div>
+            <button class="submit-quiz-fb" style="margin-top: 15px; background: #1877F2; color: white; border: none; padding: 8px 16px; border-radius: 6px; width: 100%; font-weight: 600;">
+                Répondre
+            </button>
+        </div>
+    </div>
+    
+    <div class="fb-stats">
+        <span id="likes-count-{{ quiz.id }}">{{ quiz.likes|default:"0" }}</span>
+        <span>{{ quiz.comments_count|default:"0" }} commentaires</span>
+        <span>{{ quiz.shares|default:"0" }} partages</span>
+    </div>
+    
+    <div class="fb-actions">
+        <div class="fb-action like-action" data-quiz-id="{{ quiz.id }}">
+            <i class="far fa-thumbs-up"></i>
+            <span>J'aime</span>
+        </div>
+        <div class="fb-action comment-action" data-quiz-id="{{ quiz.id }}">
+            <i class="far fa-comment"></i>
+            <span>Commenter</span>
+        </div>
+        <div class="fb-action share-action" data-quiz-id="{{ quiz.id }}">
+            <i class="fas fa-share"></i>
+            <span>Partager</span>
+        </div>
+    </div>
+    
+    <div class="comment-section-fb" id="comment-section-{{ quiz.id }}" style="display: none;">
+        <div id="comments-list-{{ quiz.id }}">
+            {% for comment in quiz.comments %}
+            <div style="padding: 10px 0; border-bottom: 1px solid #e4e6eb;">
+                <strong>{{ comment.user }}</strong>
+                <div style="font-size: 0.85rem;">{{ comment.text }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="comment-input-fb">
+            <div class="post-avatar-fb" style="width: 32px; height: 32px; font-size: 1rem;">😊</div>
+            <input type="text" class="comment-input" data-quiz-id="{{ quiz.id }}" placeholder="Écrire un commentaire...">
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="fb-post" style="text-align: center; padding: 40px 20px;">
+    <i class="fas fa-graduation-cap" style="font-size: 3rem; color: #e4e6eb; margin-bottom: 15px;"></i>
+    <p>Aucun quiz disponible sur le fil d'actualité</p>
+    <p style="color: #65676b; font-size: 0.8rem;">Suis des groupes éducatifs pour voir du contenu!</p>
+</div>
+{% endfor %}
+
+<!-- Modal de partage -->
+<div class="share-options" id="share-modal">
+    <div style="font-weight: 600; margin-bottom: 15px;">Partager sur...</div>
+    <div class="share-option" data-share-type="timeline">
+        <i class="fas fa-newspaper"></i> Fil d'actualité
+    </div>
+    <div class="share-option" data-share-type="group">
+        <i class="fas fa-users"></i> Groupe éducatif
+    </div>
+    <div class="share-option" data-share-type="messenger">
+        <i class="fab fa-facebook-messenger"></i> Messenger
+    </div>
+    <div class="share-option" style="color: #f44336;" onclick="document.getElementById('share-modal').classList.remove('show')">
+        <i class="fas fa-times"></i> Annuler
+    </div>
+</div>
+
+<script>
+    let currentShareQuizId = null;
+    
+    // Gestion des likes Facebook
+    document.querySelectorAll('.like-action').forEach(action => {
+        action.addEventListener('click', function() {
+            const quizId = this.getAttribute('data-quiz-id');
+            const icon = this.querySelector('i');
+            const likesSpan = document.getElementById(`likes-count-${quizId}`);
+            
+            if (icon.classList.contains('far')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                this.classList.add('active');
+                let currentLikes = parseInt(likesSpan.textContent);
+                likesSpan.textContent = currentLikes + 1;
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                this.classList.remove('active');
+                let currentLikes = parseInt(likesSpan.textContent);
+                likesSpan.textContent = currentLikes - 1;
+            }
+            
+            fetch(`/facebook/like/${quizId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            });
+        });
+    });
+    
+    // Sélection des options de quiz
+    document.querySelectorAll('.fb-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const container = this.closest('.fb-options');
+            container.querySelectorAll('.fb-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            this.classList.add('selected');
+        });
+    });
+    
+    // Soumission des quiz
+    document.querySelectorAll('.submit-quiz-fb').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const post = this.closest('.fb-post');
+            const quizId = post.getAttribute('data-quiz-id');
+            const selected = post.querySelector('.fb-option.selected');
+            
+            if (!selected) {
+                alert('Veuillez sélectionner une réponse');
+                return;
+            }
+            
+            const answer = selected.getAttribute('data-option');
+            
+            fetch(`/facebook/submit_answer/${quizId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answer: answer })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.correct) {
+                      alert('✅ Bonne réponse! Continuez comme ça!');
+                      selected.style.background = '#4caf50';
+                      selected.style.color = 'white';
+                  } else {
+                      alert(`❌ La bonne réponse était: ${data.correct_answer}`);
+                      selected.style.background = '#f44336';
+                      selected.style.color = 'white';
+                  }
+                  
+                  if (data.early_warning) {
+                      alert('⚠️ Un conseiller pédagogique va vous contacter pour vous aider à progresser.');
+                  }
+                  
+                  setTimeout(() => location.reload(), 2000);
+              });
+        });
+    });
+    
+    // Gestion des commentaires
+    document.querySelectorAll('.comment-action').forEach(action => {
+        action.addEventListener('click', function() {
+            const quizId = this.getAttribute('data-quiz-id');
+            const section = document.getElementById(`comment-section-${quizId}`);
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        });
+    });
+    
+    document.querySelectorAll('.comment-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                const quizId = this.getAttribute('data-quiz-id');
+                
+                fetch(`/facebook/comment/${quizId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: this.value })
+                }).then(() => {
+                    const commentsList = document.getElementById(`comments-list-${quizId}`);
+                    const commentDiv = document.createElement('div');
+                    commentDiv.style.padding = '10px 0';
+                    commentDiv.style.borderBottom = '1px solid #e4e6eb';
+                    commentDiv.innerHTML = `
+                        <strong>Vous</strong>
+                        <div style="font-size: 0.85rem;">${this.value}</div>
+                    `;
+                    commentsList.appendChild(commentDiv);
+                    this.value = '';
+                });
+            }
+        });
+    });
+    
+    // Gestion des partages
+    document.querySelectorAll('.share-action').forEach(action => {
+        action.addEventListener('click', function() {
+            currentShareQuizId = this.getAttribute('data-quiz-id');
+            document.getElementById('share-modal').classList.add('show');
+        });
+    });
+    
+    document.querySelectorAll('.share-option[data-share-type]').forEach(option => {
+        option.addEventListener('click', function() {
+            const shareType = this.getAttribute('data-share-type');
+            if (currentShareQuizId) {
+                fetch(`/facebook/share/${currentShareQuizId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ share_type: shareType })
+                }).then(() => {
+                    alert('Quiz partagé avec succès!');
+                    document.getElementById('share-modal').classList.remove('show');
+                });
+            }
+        });
+    });
+    
+    // Fermer le modal en cliquant en dehors
+    document.getElementById('share-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('show');
+        }
+    });
+</script>
 {% endblock %}

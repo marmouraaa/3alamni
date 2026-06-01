@@ -1,0 +1,64 @@
+{% extends 'base1.html' %}
+{% block title %}Créer un Quiz - OpenTrivia{% endblock %}
+
+{% block phone_content %}
+<div style="padding: 20px;">
+    <h2 style="color: white; margin-bottom: 20px;">📚 Créer un Quiz OpenTrivia</h2>
+    
+    <form method="post" style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 20px;">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: white;">📖 Matière</label>
+            <select name="subject" required style="width: 100%; padding: 12px; border-radius: 10px;">
+                <option value="">-- Sélectionner --</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: white;">📝 Titre (optionnel)</label>
+            <input type="text" name="title" style="width: 100%; padding: 12px; border-radius: 10px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: white;">🔢 Nombre de questions (1-50)</label>
+            <input type="number" name="amount" value="10" min="1" max="50" required style="width: 100%; padding: 12px; border-radius: 10px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: white;">🎯 Catégorie</label>
+            <select name="category" style="width: 100%; padding: 12px; border-radius: 10px;">
+                <option value="0">🎲 Toutes</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: white;">⭐ Difficulté</label>
+            <select name="difficulty" style="width: 100%; padding: 12px; border-radius: 10px;">
+                {% for diff in difficulties %}
+                <option value="{{ diff.value }}">{{ diff.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: white;">📋 Type</label>
+            <select name="question_type" style="width: 100%; padding: 12px; border-radius: 10px;">
+                {% for type in types %}
+                <option value="{{ type.value }}">{{ type.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" style="background: #4CAF50; color: white; padding: 14px; border-radius: 25px; width: 100%; font-weight: 600;">
+            🚀 Générer le Quiz
+        </button>
+    </form>
+</div>
+{% endblock %}

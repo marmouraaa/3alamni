@@ -1,0 +1,367 @@
+{% extends 'base1.html' %}
+{% block title %}3alemni — Instagram{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link href="{% static 'css/instagram.css' %}" rel="stylesheet">
+<style>
+    /* Styles Instagram */
+    .insta-header {
+        background: white;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid #dbdbdb;
+    }
+    
+    .insta-logo {
+        font-family: 'Grand Hotel', cursive;
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #262626;
+    }
+    
+    .stories-container {
+        background: white;
+        padding: 10px;
+        overflow-x: auto;
+        display: flex;
+        gap: 15px;
+        border-bottom: 1px solid #dbdbdb;
+        white-space: nowrap;
+    }
+    
+    .story {
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .story-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743);
+        padding: 2px;
+    }
+    
+    .story-circle img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+    }
+    
+    .story-name {
+        font-size: 0.7rem;
+        color: #262626;
+        margin-top: 5px;
+    }
+    
+    .post {
+        background: white;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #dbdbdb;
+    }
+    
+    .post-header {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .post-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .post-user {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #262626;
+    }
+    
+    .post-location {
+        font-size: 0.7rem;
+        color: #8e8e8e;
+    }
+    
+    .post-menu {
+        margin-left: auto;
+    }
+    
+    .post-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+    }
+    
+    .post-actions {
+        display: flex;
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .post-actions i {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #262626;
+    }
+    
+    .post-likes {
+        padding: 0 10px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #262626;
+    }
+    
+    .post-caption {
+        padding: 0 10px;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+    
+    .post-caption strong {
+        font-weight: 600;
+    }
+    
+    .post-comments {
+        padding: 0 10px;
+        color: #8e8e8e;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        cursor: pointer;
+    }
+    
+    .post-time {
+        padding: 0 10px 10px;
+        color: #8e8e8e;
+        font-size: 0.7rem;
+    }
+    
+    .quiz-story {
+        background: white;
+        margin: 10px;
+        border-radius: 10px;
+        border: 1px solid #dbdbdb;
+    }
+    
+    .quiz-header {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743);
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        color: white;
+    }
+    
+    .quiz-body {
+        padding: 15px;
+    }
+    
+    .quiz-question {
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .quiz-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .quiz-option-btn {
+        padding: 10px;
+        border: 1px solid #dbdbdb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+    }
+    
+    .quiz-option-btn:hover {
+        background: #fafafa;
+    }
+    
+    .quiz-option-btn.selected {
+        background: #0095f6;
+        color: white;
+        border-color: #0095f6;
+    }
+</style>
+{% endblock %}
+
+{% block phone_content %}
+<div class="insta-header">
+    <i class="fas fa-camera" style="font-size: 1.3rem;"></i>
+    <div class="insta-logo">3alemni</div>
+    <div>
+        <i class="far fa-heart" style="margin-right: 15px;"></i>
+        <i class="far fa-paper-plane"></i>
+    </div>
+</div>
+
+<div class="stories-container">
+    <div class="story">
+        <div class="story-circle">
+            <img src="https://via.placeholder.com/70" alt="story">
+        </div>
+        <div class="story-name">Ton histoire</div>
+    </div>
+    <div class="story">
+        <div class="story-circle">
+            <img src="https://via.placeholder.com/70" alt="story">
+        </div>
+        <div class="story-name">Maths</div>
+    </div>
+    <div class="story">
+        <div class="story-circle">
+            <img src="https://via.placeholder.com/70" alt="story">
+        </div>
+        <div class="story-name">Physique</div>
+    </div>
+    <div class="story">
+        <div class="story-circle">
+            <img src="https://via.placeholder.com/70" alt="story">
+        </div>
+        <div class="story-name">Histoire</div>
+    </div>
+</div>
+
+{% for quiz in quizzes %}
+<div class="post">
+    <div class="post-header">
+        <img class="post-avatar" src="https://via.placeholder.com/40" alt="avatar">
+        <div>
+            <div class="post-user">3alemni_Education</div>
+            <div class="post-location">{{ quiz.subject }}</div>
+        </div>
+        <div class="post-menu">
+            <i class="fas fa-ellipsis-h"></i>
+        </div>
+    </div>
+    
+    <div class="quiz-story">
+        <div class="quiz-header">
+            <i class="fas fa-graduation-cap"></i> Quiz éducatif - {{ quiz.subject }}
+        </div>
+        <div class="quiz-body">
+            <div class="quiz-question">{{ quiz.question }}</div>
+            <div class="quiz-options">
+                {% for option in quiz.options_list %}
+                <div class="quiz-option-btn" data-option="{{ option }}" data-quiz-id="{{ quiz.id }}">
+                    {{ option }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="post-actions">
+        <i class="far fa-heart like-icon" data-quiz-id="{{ quiz.id }}"></i>
+        <i class="far fa-comment"></i>
+        <i class="far fa-paper-plane"></i>
+        <i class="far fa-bookmark" style="margin-left: auto;"></i>
+    </div>
+    <div class="post-likes">{{ quiz.likes|default:"0" }} likes</div>
+    <div class="post-caption">
+        <strong>3alemni_Education</strong> Teste tes connaissances en {{ quiz.subject }} !
+    </div>
+    <div class="post-comments" data-quiz-id="{{ quiz.id }}">
+        Voir les {{ quiz.comments_count|default:"0" }} commentaires
+    </div>
+    <div class="post-time">Il y a {{ quiz.time_ago|default:"2 heures" }}</div>
+</div>
+{% empty %}
+<div class="post" style="text-align: center; padding: 40px 20px;">
+    <i class="fas fa-graduation-cap" style="font-size: 3rem; color: #dbdbdb; margin-bottom: 15px;"></i>
+    <p>Aucun quiz disponible pour le moment.</p>
+    <p style="color: #8e8e8e; font-size: 0.8rem;">Reviens plus tard pour découvrir du contenu éducatif!</p>
+</div>
+{% endfor %}
+
+<script>
+    // Gestion des likes Instagram
+    document.querySelectorAll('.like-icon').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const quizId = this.getAttribute('data-quiz-id');
+            const likesSpan = this.closest('.post').querySelector('.post-likes');
+            
+            if (this.classList.contains('far')) {
+                this.classList.remove('far');
+                this.classList.add('fas');
+                this.style.color = '#ed4956';
+                let currentLikes = parseInt(likesSpan.textContent);
+                likesSpan.textContent = (currentLikes + 1) + ' likes';
+            } else {
+                this.classList.remove('fas');
+                this.classList.add('far');
+                this.style.color = '#262626';
+                let currentLikes = parseInt(likesSpan.textContent);
+                likesSpan.textContent = (currentLikes - 1) + ' likes';
+            }
+            
+            // Envoyer au serveur
+            fetch(`/instagram/like/${quizId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            });
+        });
+    });
+    
+    // Sélection des réponses
+    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.quiz-options');
+            container.querySelectorAll('.quiz-option-btn').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            
+            const answer = this.getAttribute('data-option');
+            const quizId = this.getAttribute('data-quiz-id');
+            
+            fetch(`/instagram/submit_answer/${quizId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answer: answer })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.correct) {
+                      this.style.background = '#4caf50';
+                      this.style.color = 'white';
+                      alert('✅ Bonne réponse !');
+                  } else {
+                      this.style.background = '#f44336';
+                      this.style.color = 'white';
+                      alert(`❌ Mauvaise réponse. La bonne réponse était: ${data.correct_answer}`);
+                  }
+                  
+                  if (data.early_warning) {
+                      alert('⚠️ Un suivi pédagogique a été programmé pour vous aider.');
+                  }
+                  
+                  setTimeout(() => location.reload(), 2000);
+              });
+        });
+    });
+    
+    // Commentaires Instagram
+    document.querySelectorAll('.post-comments').forEach(commentLink => {
+        commentLink.addEventListener('click', function() {
+            alert('Fonctionnalité de commentaires Instagram à venir!');
+        });
+    });
+</script>
+{% endblock %}

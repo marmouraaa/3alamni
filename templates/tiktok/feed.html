@@ -1,6 +1,120 @@
-{% extends 'base.html' %}
-{% block title %}TikTok — 3alemni{% endblock %}
-{% block content %}
-<h1 style="color:white;text-align:center;margin-top:50px">TikTok Feed — Coming Soon</h1>
-<a href="{% url 'iphone_home' %}" style="color:white;display:block;text-align:center">← Retour</a>
+{% extends 'base1.html' %}
+{% block title %}TikTok - 3alemni{% endblock %}
+
+{% block phone_content %}
+<div style="background: #000; min-height: 100vh; padding: 20px;">
+    <div style="position: sticky; top: 0; background: #000; padding: 10px 0; z-index: 100;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="color: white; font-size: 1.5rem; margin: 0;">🎵 3alemni</h1>
+            <div style="display: flex; gap: 20px;">
+                <i class="fas fa-search" style="color: white; font-size: 1.2rem;"></i>
+                <i class="fas fa-plus-circle" style="color: white; font-size: 1.2rem;"></i>
+                <i class="fas fa-bell" style="color: white; font-size: 1.2rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    {% for quiz in quizzes %}
+    <div style="margin: 20px 0; background: #1a1a1a; border-radius: 15px; overflow: hidden;">
+        <div style="padding: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div style="width: 45px; height: 45px; background: linear-gradient(45deg, #25F4EE, #FE2C55); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-graduation-cap" style="color: white;"></i>
+                </div>
+                <div>
+                    <div style="color: white; font-weight: bold;">{{ quiz.subject.name }}</div>
+                    <div style="color: gray; font-size: 0.7rem;">{{ quiz.created_at|date:"d/m/Y" }}</div>
+                </div>
+            </div>
+            
+            <div style="background: #2a2a2a; border-radius: 12px; padding: 20px; margin: 10px 0;">
+                <p style="color: white; font-size: 1rem; margin-bottom: 15px;">{{ quiz.question }}</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% for option in quiz.get_options_list %}
+                    <button class="quiz-option" data-option="{{ option }}" data-quiz-id="{{ quiz.id }}" style="background: #3a3a3a; border: none; padding: 12px; border-radius: 8px; color: white; text-align: left; cursor: pointer;">
+                        {{ option }}
+                    </button>
+                    {% endfor %}
+                </div>
+                
+                <button class="submit-btn" data-quiz-id="{{ quiz.id }}" style="background: #FE2C55; color: white; border: none; padding: 10px; border-radius: 25px; width: 100%; margin-top: 15px; font-weight: bold;">
+                    Répondre 🎤
+                </button>
+            </div>
+            
+            <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+                <div style="text-align: center; color: white;">
+                    <i class="far fa-heart"></i>
+                    <div style="font-size: 0.7rem;">{{ quiz.likes }}</div>
+                </div>
+                <div style="text-align: center; color: white;">
+                    <i class="far fa-comment"></i>
+                    <div style="font-size: 0.7rem;">{{ quiz.comments_count }}</div>
+                </div>
+                <div style="text-align: center; color: white;">
+                    <i class="far fa-bookmark"></i>
+                </div>
+                <div style="text-align: center; color: white;">
+                    <i class="fas fa-share"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 50px 20px;">
+        <i class="fas fa-music" style="font-size: 3rem; color: #555;"></i>
+        <p style="color: gray; margin-top: 15px;">Aucun quiz pour le moment</p>
+        <p style="color: #555; font-size: 0.8rem;">Reviens plus tard !</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.querySelectorAll('.submit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const quizId = this.dataset.quizId;
+        const selected = document.querySelector(`.quiz-option[data-quiz-id="${quizId}"].selected`);
+        
+        if (!selected) {
+            alert('Choisis une réponse d\'abord !');
+            return;
+        }
+        
+        const answer = selected.dataset.option;
+        
+        fetch(`/education/api/submit/${quizId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ answer: answer, time_taken: 0, network: 'tiktok' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_correct) {
+                alert('✅ Bonne réponse ! +100 points');
+                selected.style.background = '#4CAF50';
+            } else {
+                alert(`❌ Mauvaise réponse ! La bonne était: ${data.correct_answer}`);
+                selected.style.background = '#f44336';
+            }
+            setTimeout(() => location.reload(), 2000);
+        });
+    });
+});
+
+document.querySelectorAll('.quiz-option').forEach(opt => {
+    opt.addEventListener('click', function() {
+        const quizId = this.dataset.quizId;
+        document.querySelectorAll(`.quiz-option[data-quiz-id="${quizId}"]`).forEach(o => {
+            o.classList.remove('selected');
+            o.style.background = '#3a3a3a';
+        });
+        this.classList.add('selected');
+        this.style.background = '#FE2C55';
+    });
+});
+</script>
 {% endblock %}

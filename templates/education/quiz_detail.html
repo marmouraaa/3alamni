@@ -1,0 +1,44 @@
+{% extends 'base1.html' %}
+{% block title %}Détail du Quiz - 3alemni{% endblock %}
+
+{% block phone_content %}
+<div style="padding: 20px;">
+    <h2 style="color: white;">{{ quiz.title }}</h2>
+    
+    <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin: 20px 0;">
+        <p style="color: white; font-size: 1.1rem;">{{ quiz.question }}</p>
+        
+        {% if not existing_attempt %}
+        <form method="post">
+            {% csrf_token %}
+            {% for option in quiz.get_options_list %}
+            <label style="display: block; background: rgba(255,255,255,0.05); margin: 10px 0; padding: 12px; border-radius: 12px; cursor: pointer;">
+                <input type="radio" name="answer" value="{{ option }}" required style="margin-right: 10px;">
+                {{ option }}
+            </label>
+            {% endfor %}
+            <input type="hidden" name="time_taken" id="time_taken" value="0">
+            <button type="submit" style="background: #4CAF50; color: white; padding: 12px; border-radius: 25px; width: 100%; margin-top: 20px;">
+                Valider ma réponse
+            </button>
+        </form>
+        {% else %}
+        <div style="text-align: center; padding: 20px;">
+            <p style="color: {% if last_attempt.is_correct %}#4CAF50{% else %}#f44336{% endif %};">
+                {% if last_attempt.is_correct %}✅ Bonne réponse !{% else %}❌ Mauvaise réponse{% endif %}
+            </p>
+            <p style="color: rgba(255,255,255,0.7);">Votre score: {{ last_attempt.score }} points</p>
+            <a href="{% url 'quiz_list' %}" style="color: #2196F3;">← Retour à la liste</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    let startTime = Date.now();
+    document.querySelector('form').addEventListener('submit', function() {
+        let timeTaken = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('time_taken').value = timeTaken;
+    });
+</script>
+{% endblock %}

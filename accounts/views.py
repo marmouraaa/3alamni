@@ -51,45 +51,40 @@ def _redirect_by_role(user):
 
 # ========== VUES D'AUTHENTIFICATION ==========
 
+
+
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.urls import reverse
+from .models import User
+
 def login_view(request):
-    if request.user.is_authenticated:
-        return _redirect_by_role(request.user)
-
-    from .forms import LoginForm
-    form = LoginForm()
-    
     if request.method == 'POST':
-        form = LoginForm(request.POST)
-        ip = _get_client_ip(request)
-        username = request.POST.get('username', '').strip()
-
-        if _is_locked_out(ip, username):
-            messages.error(request, "Trop de tentatives. Réessaie dans 15 minutes.")
-            return render(request, 'accounts/login.html', {'form': form})
-
-        if form.is_valid():
-            user = authenticate(
-                request, 
-                username=form.cleaned_data['username'], 
-                password=form.cleaned_data['password']
-            )
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
             
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    _clear_attempts(ip, username)
-                    if 'log_action' in globals():
-                        log_action(user=user, action='login', result='success', request=request)
-                    messages.success(request, f"Bienvenue {user.get_full_name() or user.username} !")
-                    return _redirect_by_role(user)
-                else:
-                    messages.error(request, "Ce compte est désactivé.")
+            # Redirection selon le rôle
+            if user.role == 'student':
+                return redirect('dashboard:student')
+            elif user.role == 'teacher':
+                return redirect('dashboard:teacher')
+            elif user.role == 'counselor':
+                return redirect('dashboard:counselor')
+            elif user.role == 'parent':
+                return redirect('dashboard:parent')  # ← CORRIGÉ
             else:
-                _register_failed_attempt(ip, username)
-                messages.error(request, "Identifiants incorrects. Vérifie ton nom d'utilisateur et ton mot de passe.")
+                return redirect('iphone_home')
+        else:
+            messages.error(request, 'Nom d\'utilisateur ou mot de passe incorrect')
     
-    return render(request, 'accounts/login.html', {'form': form})
-
+    return render(request, 'accounts/login.html')
 @login_required
 def logout_view(request):
     if request.method == 'POST':

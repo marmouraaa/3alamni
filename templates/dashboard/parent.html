@@ -20,6 +20,16 @@ body {
     color: white;
 }
 
+.parent-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.parent-header p {
+    opacity: 0.9;
+    font-size: 0.85rem;
+}
+
 .child-card {
     background: white;
     border-radius: 20px;
@@ -38,8 +48,133 @@ body {
 .progress-fill {
     background: #FF9800;
     height: 100%;
-    width: 0%;
     border-radius: 10px;
+    transition: width 0.5s;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: #FFF8F0;
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #E65100;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+.badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.badge-item {
+    background: #FFF3E0;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.alert-card {
+    background: #FFF5F5;
+    border-left: 4px solid #f44336;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.alert-title {
+    font-weight: 600;
+    color: #c62828;
+    font-size: 0.85rem;
+}
+
+.alert-message {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+.btn-report {
+    background: linear-gradient(135deg, #E65100, #FF9800);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    width: 100%;
+    margin-top: 15px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-report:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(230, 81, 0, 0.3);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #E65100;
+    margin: 20px 0 10px 0;
+    border-left: 3px solid #E65100;
+    padding-left: 10px;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.activity-name {
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.activity-date {
+    font-size: 0.7rem;
+    color: #999;
+}
+
+.activity-score {
+    font-weight: 700;
+    color: #4CAF50;
+}
+
+.no-data {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+    font-style: italic;
 }
 </style>
 {% endblock %}
@@ -51,21 +186,118 @@ body {
 </div>
 
 <div style="padding: 20px;">
+    
+    {% if child %}
     <div class="child-card">
-        <h3>🎓 Progrès de {{ child_name|default:"ton enfant" }}</h3>
+        <h3>🎓 Progrès de {{ child.first_name }} {{ child.last_name }}</h3>
+        
+        <!-- Statistiques rapides -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_points|default:0 }}</div>
+                <div class="stat-label">⭐ Points gagnés</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total_quizzes|default:0 }}</div>
+                <div class="stat-label">📚 Quiz complétés</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ success_rate|default:0 }}%</div>
+                <div class="stat-label">📈 Taux de réussite</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ current_streak|default:0 }}</div>
+                <div class="stat-label">🔥 Série actuelle</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total_study_hours|default:0 }}h</div>
+                <div class="stat-label">⏱️ Heures d'étude</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ badges_count|default:0 }}</div>
+                <div class="stat-label">🏆 Badges obtenus</div>
+            </div>
+        </div>
+        
+        <!-- Objectif de la semaine -->
         <div style="margin: 15px 0;">
-            <div>Objectif d'étude cette semaine :</div>
-            <div class="progress-bar"><div class="progress-fill" style="width: 65%;"></div></div>
-            <div style="margin-top:5px;">3h / 5h réalisées</div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>📊 Objectif d'étude cette semaine :</span>
+                <span>{{ study_hours_week|default:0 }}h / 5h</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ week_percent|default:0 }}%;"></div>
+            </div>
         </div>
-        <div style="display: flex; gap: 15px; margin-top: 15px;">
-            <span>⭐ 847 points</span>
-            <span>📚 12 quiz</span>
-            <span>🏆 2 badges</span>
+        
+        <!-- Badges de l'enfant -->
+        <div class="section-title">🏅 Badges obtenus</div>
+        <div class="badge-list">
+            {% for badge in child_badges %}
+            <div class="badge-item">
+                <span>{{ badge.icon }}</span> {{ badge.name }}
+            </div>
+            {% empty %}
+            <div class="no-data">Aucun badge pour le moment</div>
+            {% endfor %}
         </div>
-        <button style="margin-top:15px; background:#FF9800; color:white; border:none; padding:10px 20px; border-radius:25px;">
-            📊 Rapport hebdomadaire
-        </button>
+        
+        <!-- Alertes récentes -->
+        <div class="section-title">⚠️ Alertes récentes</div>
+        {% for alert in alerts %}
+        <div class="alert-card">
+            <div class="alert-title">🔔 {{ alert.severity|title }} - {{ alert.created_at|date:"d/m/Y" }}</div>
+            <div class="alert-message">{{ alert.message|truncatechars:80 }}</div>
+        </div>
+        {% empty %}
+        <div class="no-data">Aucune alerte récente</div>
+        {% endfor %}
+        
+        <!-- Performance par matière -->
+        <div class="section-title">📖 Performance par matière</div>
+        {% for subject in subject_stats %}
+        <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                <span>{{ subject.subject }}</span>
+                <span>{{ subject.correct }}/{{ subject.total }} bonnes réponses ({{ subject.percentage }}%)</span>
+            </div>
+            <div class="progress-bar" style="height: 6px;">
+                <div class="progress-fill" style="width: {{ subject.percentage }}%;"></div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-data">Aucune donnée par matière</div>
+        {% endfor %}
+        
+        <!-- Activités récentes -->
+        <div class="section-title">🕐 Activités récentes</div>
+        {% for attempt in recent_attempts %}
+        <div class="activity-item">
+            <div>
+                <div class="activity-name">{{ attempt.quiz.title|truncatechars:35 }}</div>
+                <div class="activity-date">{{ attempt.created_at|date:"d/m/Y H:i" }}</div>
+            </div>
+            <div class="activity-score">
+                {% if attempt.is_correct %}✅ +{{ attempt.score }}{% else %}❌{% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-data">Aucune activité récente</div>
+        {% endfor %}
+        
+        
+
     </div>
+    
+    {% else %}
+    <div class="child-card">
+        <div class="empty-state">
+            <i class="fas fa-child" style="font-size: 3rem; color: #ccc;"></i>
+            <h3>Aucun enfant lié à ce compte</h3>
+            <p>Veuillez contacter l'administrateur pour lier votre compte parent à votre enfant.</p>
+        </div>
+    </div>
+    {% endif %}
+    
 </div>
 {% endblock %}

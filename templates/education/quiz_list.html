@@ -1,0 +1,58 @@
+{% extends 'base1.html' %}
+{% block title %}Liste des Quiz - 3alemni{% endblock %}
+
+{% block phone_content %}
+<div style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: white; margin: 0;">📋 Liste des Quiz</h2>
+        <a href="{% url 'create_trivia_quiz' %}" style="background: #4CAF50; color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.8rem;">
+            + Nouveau quiz
+        </a>
+    </div>
+    
+    {% if quizzes %}
+        {% for quiz in quizzes %}
+        <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h3 style="color: #FFD700; margin: 0 0 5px 0; font-size: 1rem;">{{ quiz.title }}</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                            📖 {{ quiz.subject.name }}
+                        </span>
+                        <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                            {% if quiz.difficulty == 'easy' %}🌟 Facile
+                            {% elif quiz.difficulty == 'medium' %}⭐ Moyen
+                            {% else %}🔥 Difficile{% endif %}
+                        </span>
+                        <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">
+                            🎯 {{ quiz.times_played }} joués
+                        </span>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.8); font-size: 0.85rem; margin: 0;">
+                        {{ quiz.question|truncatechars:80 }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'quiz_detail' quiz.id %}" style="color: #4CAF50; text-decoration: none; font-size: 0.8rem;">
+                        Voir →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 50px 20px; background: rgba(255,255,255,0.05); border-radius: 20px;">
+            <i class="fas fa-book-open" style="font-size: 3rem; color: rgba(255,255,255,0.3); margin-bottom: 15px;"></i>
+            <p style="color: rgba(255,255,255,0.6);">Aucun quiz pour le moment</p>
+            <a href="{% url 'create_trivia_quiz' %}" style="background: #4CAF50; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; margin-top: 10px;">
+                🎯 Créer mon premier quiz
+            </a>
+        </div>
+    {% endif %}
+    
+<a href="/dashboard/teacher/" style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.8rem;">
+    ← Retour au dashboard
+</a>
+</div>
+{% endblock %}

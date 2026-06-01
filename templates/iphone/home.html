@@ -146,7 +146,7 @@
         <div class="app-img facebook-icon"><i class="fab fa-facebook-f"></i></div>
         <span class="app-label">Facebook</span>
     </a>
-    <a href="{% url 'health_new' %}" class="app-icon">
+    <a href="{% url 'health:new_request' %}" class="app-icon">
         <div class="app-img health-icon"><i class="fas fa-heartbeat"></i></div>
         <span class="app-label">Santé</span>
     </a>
@@ -158,7 +158,7 @@
         <div class="app-img dashboard-icon"><i class="fas fa-chart-line"></i></div>
         <span class="app-label">Dashboard</span>
     </a>
-    <a href="#" class="app-icon">
+    <a href="{% url 'profile' %}" class="app-icon">
         <div class="app-img profile-icon"><i class="fas fa-user"></i></div>
         <span class="app-label">Profil</span>
     </a>
@@ -174,17 +174,18 @@
     <a href="{% url 'dashboard_redirect' %}" class="app-icon">
         <div class="app-img dashboard-icon"><i class="fas fa-chart-line"></i></div>
     </a>
-    <a href="#" class="app-icon">
+    <a href="{% url 'profile' %}" class="app-icon">
         <div class="app-img profile-icon"><i class="fas fa-user"></i></div>
     </a>
 </div>
-<!-- Dans ton template iphone/home.html, remplace le lien logout par un formulaire -->
+
 <form method="post" action="{% url 'logout' %}" style="display: inline;">
     {% csrf_token %}
     <button type="submit" style="background: none; border: none; color: red; cursor: pointer;">
         🚪 Se déconnecter
     </button>
 </form>
+
 <script>
 function updateClock() {
     const now = new Date();

@@ -1,227 +1,55 @@
-# early_warning/views.py
+# early_warning/views.py - VERSION CORRIGÉE ET FONCTIONNELLE
 
 import csv
 import logging
-import json
 from datetime import datetime
+
 import pandas as pd
-import numpy as np
-from django.db.models import Count, Q
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from .models import RiskScore, Alert, Intervention, ThresholdConfig
+from django.core.exceptions import PermissionDenied
+from django.db.models import Avg, Count, Q
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
 from .forms import ImportCSVForm, InterventionForm, ThresholdConfigForm
-from .services import RiskScoringService, TransformersAIService
+from .models import AISuggestion, Alert, Intervention, RiskScore, ThresholdConfig
+from .services import NotificationService, RiskScoringService, TransformersAIService
+
+# Import des services d'audit
+from audit.services import log_action, log_error, log_success, log_blocked
 
 logger = logging.getLogger(__name__)
 
 
-@login_required
-def dashboard(request):
-    """Dashboard avec graphiques générés par pandas et Chart.js"""
-    
-    # ========== DONNÉES DE BASE ==========
-    total_students = RiskScore.objects.count()
-    high_risk_count = RiskScore.objects.filter(risk_level='high').count()
-    medium_risk_count = RiskScore.objects.filter(risk_level='medium').count()
-    low_risk_count = RiskScore.objects.filter(risk_level='low').count()
-    active_alerts = Alert.objects.filter(status='pending').count()
-    
-    # Interventions
-    interventions = Intervention.objects.select_related('alert__risk_score').order_by('-created_at')
-    interventions_stats = {
-        'total': interventions.count(),
-        'completed': interventions.filter(status='completed').count(),
-        'in_progress': interventions.filter(status='in_progress').count(),
-        'planned': interventions.filter(status='planned').count(),
-    }
-    if interventions_stats['total'] > 0:
-        interventions_stats['completion_rate'] = int(
-            (interventions_stats['completed'] / interventions_stats['total']) * 100
-        )
-    else:
-        interventions_stats['completion_rate'] = 0
-    
-    recent_interventions = interventions[:5]
-    alerts = Alert.objects.select_related('risk_score', 'ai_suggestion').exclude(
-        status='resolved'
-    ).order_by('-created_at')[:10]
-    
-    has_data = total_students > 0
-    
-    # ========== ANALYSES AVEC PANDAS POUR LES GRAPHIQUES ==========
-    # Initialisation par défaut
-    risk_distribution_labels = ['Risque Élevé', 'Risque Moyen', 'Risque Faible']
-    risk_distribution_data = [0, 0, 0]
-    class_avg_labels = []
-    class_avg_data = []
-    histogram_labels = ['0-20', '20-40', '40-60', '60-80', '80-100']
-    histogram_data = [0, 0, 0, 0, 0]
-    daily_labels = []
-    daily_data = []
-    correlation_labels = ['Absences', 'Notes', 'Comportement']
-    correlation_data = [0, 0, 0]
-    top10_labels = []
-    top10_data = []
-    top10_classes = []
-    scatter_absences = []
-    scatter_grades = []
-    class_count_labels = []
-    class_count_data = []
-    class_grades_labels = []
-    class_grades_data = []
-    
-    if has_data:
-        try:
-            # Récupérer toutes les données
-            risk_data = list(RiskScore.objects.all().values(
-                'student_name', 'class_name', 'risk_level', 'risk_score',
-                'absences', 'avg_grade', 'behavior_score', 'created_at'
-            ))
-            
-            # Convertir en DataFrame pandas
-            df = pd.DataFrame(risk_data)
-            
-            # Graphique 1: Distribution des niveaux de risque
-            risk_distribution = df['risk_level'].value_counts().to_dict()
-            risk_distribution_data = [
-                int(risk_distribution.get('high', 0)),
-                int(risk_distribution.get('medium', 0)),
-                int(risk_distribution.get('low', 0))
-            ]
-            
-            # Graphique 2: Score moyen par classe
-            if len(df) > 0:
-                class_avg = df.groupby('class_name')['risk_score'].mean().sort_values(ascending=False).head(10)
-                class_avg_labels = [str(x) for x in class_avg.index.tolist()]
-                class_avg_data = [float(round(x, 1)) for x in class_avg.values.tolist()]
-            
-            # Graphique 3: Distribution des scores
-            if len(df) > 0:
-                df['risk_bin'] = pd.cut(df['risk_score'], bins=[0, 20, 40, 60, 80, 100], 
-                                        labels=histogram_labels, right=False)
-                hist_counts = df['risk_bin'].value_counts().sort_index()
-                histogram_data = [int(hist_counts.get(label, 0)) for label in histogram_labels]
-            
-            # Graphique 4: Évolution temporelle
-            if len(df) > 0:
-                df['date'] = pd.to_datetime(df['created_at']).dt.date
-                daily_avg = df.groupby('date')['risk_score'].mean().tail(30)
-                daily_labels = [d.strftime('%d/%m') for d in daily_avg.index]
-                daily_data = [float(round(x, 1)) for x in daily_avg.values.tolist()]
-            
-            # Graphique 5: Corrélations
-            if len(df) > 1:
-                correlation_data = [
-                    float(round(df['absences'].corr(df['risk_score']), 2)),
-                    float(round(df['avg_grade'].corr(df['risk_score']), 2)),
-                    float(round(df['behavior_score'].corr(df['risk_score']), 2))
-                ]
-            
-            # Graphique 6: Top 10 risques
-            if len(df) > 0:
-                top10 = df.nlargest(10, 'risk_score')[['student_name', 'risk_score', 'class_name']]
-                top10_labels = [str(row['student_name']) for _, row in top10.iterrows()]
-                top10_data = [float(round(row['risk_score'], 1)) for _, row in top10.iterrows()]
-                top10_classes = [str(row['class_name']) for _, row in top10.iterrows()]
-            
-            # Graphique 7 & 8: Scatter plots
-            if len(df) > 0:
-                scatter_absences = [{'x': float(row['absences']), 'y': float(row['risk_score'])} for _, row in df.iterrows()]
-                scatter_grades = [{'x': float(row['avg_grade']), 'y': float(row['risk_score'])} for _, row in df.iterrows()]
-            
-            # Graphique 9: Nombre d'étudiants par classe
-            if len(df) > 0:
-                class_count = df['class_name'].value_counts().head(10)
-                class_count_labels = [str(x) for x in class_count.index.tolist()]
-                class_count_data = [int(x) for x in class_count.values.tolist()]
-            
-            # Graphique 10: Moyenne des notes par classe
-            if len(df) > 0:
-                class_grades = df.groupby('class_name')['avg_grade'].mean().sort_values(ascending=False).head(10)
-                class_grades_labels = [str(x) for x in class_grades.index.tolist()]
-                class_grades_data = [float(round(x, 1)) for x in class_grades.values.tolist()]
-                
-        except Exception as e:
-            logger.error(f"Erreur pandas: {e}")
-    
-    context = {
-        'total_students': total_students,
-        'high_risk_count': high_risk_count,
-        'medium_risk_count': medium_risk_count,
-        'low_risk_count': low_risk_count,
-        'active_alerts': active_alerts,
-        'has_data': has_data,
-        'user': request.user,
-        'interventions_stats': interventions_stats,
-        'recent_interventions': recent_interventions,
-        'total_interventions': interventions_stats['total'],
-        'alerts': alerts,
-        # Données pour les graphiques
-        'risk_distribution_labels': risk_distribution_labels,
-        'risk_distribution_data': risk_distribution_data,
-        'class_avg_labels': class_avg_labels,
-        'class_avg_data': class_avg_data,
-        'histogram_labels': histogram_labels,
-        'histogram_data': histogram_data,
-        'daily_labels': daily_labels,
-        'daily_data': daily_data,
-        'correlation_labels': correlation_labels,
-        'correlation_data': correlation_data,
-        'top10_labels': top10_labels,
-        'top10_data': top10_data,
-        'top10_classes': top10_classes,
-        'scatter_absences': scatter_absences,
-        'scatter_grades': scatter_grades,
-        'class_count_labels': class_count_labels,
-        'class_count_data': class_count_data,
-        'class_grades_labels': class_grades_labels,
-        'class_grades_data': class_grades_data,
-    }
-    
-    return render(request, 'dashboard/teacher.html', context)
+# ========== DÉCORATEUR DE RÔLE ==========
+
+def role_required(*allowed_roles):
+    """Décorateur pour vérifier les rôles avec log d'audit"""
+    def decorator(view_func):
+        def wrapped_view(request, *args, **kwargs):
+            if not hasattr(request.user, 'role') or request.user.role not in allowed_roles:
+                log_blocked(
+                    user=request.user,
+                    action='unauthorized_access',
+                    reason=f"Rôle '{getattr(request.user, 'role', 'unknown')}' non autorisé pour {request.path}",
+                    case_id=request.path,
+                    request=request
+                )
+                raise PermissionDenied("Vous n'avez pas les permissions nécessaires.")
+            return view_func(request, *args, **kwargs)
+        return wrapped_view
+    return decorator
 
 
+# ========== VUE 1 — IMPORT CSV ==========
+
 @login_required
-def mes_interventions_list(request):
-    """Liste de toutes les interventions du professeur"""
-    interventions = Intervention.objects.select_related(
-        'alert__risk_score', 'ai_suggestion'
-    ).order_by('-created_at')
-    
-    status_filter = request.GET.get('status', '')
-    if status_filter:
-        interventions = interventions.filter(status=status_filter)
-    
-    paginator = Paginator(interventions, 10)
-    page = request.GET.get('page')
-    interventions_page = paginator.get_page(page)
-    
-    stats = {
-        'total': interventions.count(),
-        'completed': interventions.filter(status='completed').count(),
-        'in_progress': interventions.filter(status='in_progress').count(),
-        'planned': interventions.filter(status='planned').count(),
-        'overdue': sum(1 for i in interventions if i.is_overdue()),
-    }
-    
-    context = {
-        'interventions': interventions_page,
-        'stats': stats,
-        'status_filter': status_filter,
-    }
-    return render(request, 'early_warning/mes_interventions.html', context)
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 1 — IMPORT CSV
-# ══════════════════════════════════════════════════════════════════════════════
-@login_required
+@role_required('teacher', 'admin')
 def import_csv(request):
-    """
-    Import des données étudiants depuis un fichier CSV.
-    """
+    """Import des données étudiants depuis un fichier CSV."""
     if request.method == 'POST':
         form = ImportCSVForm(request.POST, request.FILES)
         if form.is_valid():
@@ -230,24 +58,15 @@ def import_csv(request):
             try:
                 df = pd.read_csv(csv_file)
 
-                # Vérification des colonnes requises
                 required = [
                     'student_name', 'student_id', 'class_name',
                     'absences', 'avg_grade', 'behavior_score',
                 ]
                 missing = [col for col in required if col not in df.columns]
                 if missing:
-                    error_msg = (
-                        f"CSV malformé — colonnes manquantes: "
-                        f"{', '.join(missing)}. "
-                        f"Colonnes trouvées: {', '.join(df.columns.tolist())}"
-                    )
+                    error_msg = f"CSV malformé — colonnes manquantes: {', '.join(missing)}"
                     messages.error(request, error_msg)
-                    return render(
-                        request,
-                        'early_warning/import_csv.html',
-                        {'form': form, 'error': error_msg}
-                    )
+                    return render(request, 'early_warning/import_csv.html', {'form': form, 'error': error_msg})
 
                 # Validation des données
                 errors = []
@@ -258,33 +77,19 @@ def import_csv(request):
                         behavior = float(row['behavior_score'])
 
                         if not (0 <= absences <= 100):
-                            errors.append(
-                                f"Ligne {idx+2}: absences={absences} hors intervalle [0-100]"
-                            )
+                            errors.append(f"Ligne {idx+2}: absences={absences} hors intervalle [0-100]")
                         if not (0 <= avg <= 20):
-                            errors.append(
-                                f"Ligne {idx+2}: avg_grade={avg} hors intervalle [0-20]"
-                            )
+                            errors.append(f"Ligne {idx+2}: avg_grade={avg} hors intervalle [0-20]")
                         if not (0 <= behavior <= 10):
-                            errors.append(
-                                f"Ligne {idx+2}: behavior_score={behavior} hors [0-10]"
-                            )
+                            errors.append(f"Ligne {idx+2}: behavior_score={behavior} hors [0-10]")
                     except (ValueError, TypeError) as e:
-                        errors.append(
-                            f"Ligne {idx+2}: valeur numérique invalide — {e}"
-                        )
+                        errors.append(f"Ligne {idx+2}: valeur numérique invalide — {e}")
 
                 if errors:
-                    error_msg = f"Données invalides ({len(errors)} erreur(s)): " + \
-                                " | ".join(errors[:5])
+                    error_msg = f"Données invalides ({len(errors)} erreur(s)): " + " | ".join(errors[:5])
                     messages.error(request, error_msg)
-                    return render(
-                        request,
-                        'early_warning/import_csv.html',
-                        {'form': form, 'errors': errors}
-                    )
+                    return render(request, 'early_warning/import_csv.html', {'form': form, 'errors': errors})
 
-                # Traitement nominal
                 scoring_service = RiskScoringService()
                 ai_service = TransformersAIService()
                 config = ThresholdConfig.get_config()
@@ -308,10 +113,7 @@ def import_csv(request):
                         if risk_obj.risk_score >= config.alert_threshold:
                             alert = Alert.objects.create(
                                 risk_score=risk_obj,
-                                message=(
-                                    f"Alerte auto — {risk_obj.student_name} — "
-                                    f"Score: {risk_obj.risk_score:.1f}/100"
-                                ),
+                                message=f"Alerte auto — {risk_obj.student_name} — Score: {risk_obj.risk_score:.1f}/100",
                                 status='pending',
                             )
                             ai_sugg = ai_service.get_ai_suggestion(risk_obj)
@@ -323,10 +125,7 @@ def import_csv(request):
                         errors_rows.append(f"Ligne {idx+2}: {e}")
                         logger.error(f"[ImportCSV] Erreur ligne {idx+2}: {e}")
 
-                msg = (
-                    f"Import terminé ! {students_processed} étudiants traités, "
-                    f"{alerts_created} alertes générées."
-                )
+                msg = f"Import terminé ! {students_processed} étudiants traités, {alerts_created} alertes générées."
                 if errors_rows:
                     msg += f" ({len(errors_rows)} ligne(s) ignorée(s))"
 
@@ -336,20 +135,157 @@ def import_csv(request):
             except Exception as e:
                 error_msg = f"Erreur lors de la lecture du CSV: {e}"
                 messages.error(request, error_msg)
-                return render(
-                    request,
-                    'early_warning/import_csv.html',
-                    {'form': form}
-                )
+                return render(request, 'early_warning/import_csv.html', {'form': form})
     else:
         form = ImportCSVForm()
 
     return render(request, 'early_warning/import_csv.html', {'form': form})
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 3 — LISTE DES ALERTES
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 2 — DASHBOARD (VERSION CORRIGÉE SANS FILTRE) ==========
+
+# ========== VUE 2 — DASHBOARD (VERSION CORRIGÉE AVEC TOUS LES GRAPHIQUES) ==========
+
+@login_required
+def dashboard(request):
+    """Dashboard principal avec statistiques dynamiques - Version complète"""
+    
+    # Récupérer TOUTES les données
+    risks = RiskScore.objects.all()
+    
+    total_students = risks.count()
+    high_risk_count = risks.filter(risk_level='high').count()
+    medium_risk_count = risks.filter(risk_level='medium').count()
+    low_risk_count = risks.filter(risk_level='low').count()
+    
+    top_risks = risks.order_by('-risk_score')[:10]
+    
+    alerts = (
+        Alert.objects
+        .select_related('risk_score', 'ai_suggestion')
+        .exclude(status='resolved')
+        .order_by('-created_at')[:10]
+    )
+    
+    class_stats = (
+        risks
+        .values('class_name')
+        .annotate(
+            total=Count('id'),
+            high=Count('id', filter=Q(risk_level='high')),
+            avg_score=Avg('risk_score'),
+        )
+        .order_by('-high')[:8]
+    )
+    
+    has_data = total_students > 0
+    
+    # ========== DONNÉES POUR LES GRAPHIQUES ==========
+    
+    # 1. Distribution des risques (camembert)
+    risk_distribution_labels = ['Élevé', 'Moyen', 'Faible']
+    risk_distribution_data = [high_risk_count, medium_risk_count, low_risk_count]
+    
+    # 2. Score moyen par classe
+    class_avg = risks.values('class_name').annotate(avg_risk=Avg('risk_score'))
+    class_avg_labels = [c['class_name'] for c in class_avg if c['class_name']]
+    class_avg_data = [round(c['avg_risk'], 1) for c in class_avg if c['class_name']]
+    
+    # 3. Histogramme des scores
+    risk_scores_list = list(risks.values_list('risk_score', flat=True))
+    bins = [0, 20, 40, 60, 80, 100]
+    histogram_data = [0] * (len(bins) - 1)
+    for score in risk_scores_list:
+        for i in range(len(bins) - 1):
+            if bins[i] <= score < bins[i+1] or (i == len(bins)-2 and score == bins[i+1]):
+                histogram_data[i] += 1
+                break
+    histogram_labels = ['0-20', '20-40', '40-60', '60-80', '80-100']
+    
+    # 4. Top 10 étudiants à risque
+    top10_labels = [s.student_name for s in top_risks if s.student_name]
+    top10_data = [s.risk_score for s in top_risks if s.student_name]
+    
+    # 5. Scatter plot Absences vs Risque
+    scatter_absences = [
+        {'x': r.absences, 'y': r.risk_score} 
+        for r in risks.filter(absences__isnull=False) 
+        if r.absences is not None
+    ]
+    
+    # 6. Scatter plot Notes vs Risque
+    scatter_grades = [
+        {'x': r.avg_grade, 'y': r.risk_score} 
+        for r in risks.filter(avg_grade__isnull=False) 
+        if r.avg_grade is not None
+    ]
+    
+    # 7. Nombre d'étudiants par classe
+    class_count = risks.values('class_name').annotate(count=Count('id'))
+    class_count_labels = [c['class_name'] for c in class_count if c['class_name']]
+    class_count_data = [c['count'] for c in class_count if c['class_name']]
+    
+    # 8. Moyenne des notes par classe
+    class_grades = risks.filter(avg_grade__isnull=False).values('class_name').annotate(avg_grade=Avg('avg_grade'))
+    class_grades_labels = [c['class_name'] for c in class_grades if c['class_name']]
+    class_grades_data = [round(c['avg_grade'], 1) for c in class_grades if c['class_name']]
+    
+    # 9. Évolution du score de risque moyen (par date de création)
+    from django.db.models.functions import TruncDate
+    daily_trend = (
+        risks
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(avg_score=Avg('risk_score'))
+        .order_by('date')
+    )
+    
+    daily_labels = [d['date'].strftime('%d/%m') if d['date'] else '' for d in daily_trend]
+    daily_data = [round(d['avg_score'], 1) for d in daily_trend]
+    
+    # 10. Interventions récentes
+    recent_interventions = (
+        Intervention.objects
+        .select_related('alert__risk_score', 'ai_suggestion')
+        .order_by('-created_at')[:5]
+    )
+    
+    context = {
+        # Variables pour le template
+        'total_students': total_students,
+        'high_risk_count': high_risk_count,
+        'medium_risk_count': medium_risk_count,
+        'low_risk_count': low_risk_count,
+        'top_risks': top_risks,
+        'alerts': alerts,
+        'class_stats': list(class_stats),
+        'has_data': has_data,
+        # Variables pour les graphiques
+        'risk_distribution_labels': risk_distribution_labels,
+        'risk_distribution_data': risk_distribution_data,
+        'class_avg_labels': class_avg_labels,
+        'class_avg_data': class_avg_data,
+        'histogram_labels': histogram_labels,
+        'histogram_data': histogram_data,
+        'top10_labels': top10_labels,
+        'top10_data': top10_data,
+        'scatter_absences': scatter_absences,
+        'scatter_grades': scatter_grades,
+        'class_count_labels': class_count_labels,
+        'class_count_data': class_count_data,
+        'class_grades_labels': class_grades_labels,
+        'class_grades_data': class_grades_data,
+        'correlation_labels': ['Absences', 'Notes', 'Comportement'],
+        'correlation_data': [0.6, -0.7, 0.4],
+        # NOUVELLES VARIABLES
+        'daily_labels': daily_labels,
+        'daily_data': daily_data,
+        'recent_interventions': recent_interventions,
+    }
+    
+    return render(request, 'dashboard/teacher.html', context)
+# ========== VUE 3 — LISTE DES ALERTES ==========
+
 @login_required
 def alerts_list(request):
     """Liste paginée des alertes avec filtres"""
@@ -391,9 +327,8 @@ def alerts_list(request):
     return render(request, 'early_warning/alerts_list.html', context)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 4 — DÉTAIL D'UNE ALERTE
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 4 — DÉTAIL D'UNE ALERTE ==========
+
 @login_required
 def alert_detail(request, alert_id):
     """Détail d'une alerte avec suggestion IA"""
@@ -401,8 +336,8 @@ def alert_detail(request, alert_id):
         Alert.objects.select_related('risk_score', 'ai_suggestion'),
         id=alert_id,
     )
-
-    interventions = alert.interventions.order_by('-created_at')
+    
+    interventions = alert.interventions.select_related('ai_suggestion').order_by('-created_at')
 
     context = {
         'alert': alert,
@@ -412,9 +347,8 @@ def alert_detail(request, alert_id):
     return render(request, 'early_warning/alert_detail.html', context)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 5 — CRÉER UNE INTERVENTION
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 5 — CRÉER UNE INTERVENTION ==========
+
 @login_required
 def intervention_create(request, alert_id):
     """Créer une intervention pour une alerte donnée"""
@@ -430,7 +364,7 @@ def intervention_create(request, alert_id):
 
             alert.status = 'in_progress'
             alert.save()
-
+            
             messages.success(request, "Intervention créée avec succès !")
             return redirect('early_warning:intervention_detail', pk=intervention.pk)
     else:
@@ -449,9 +383,8 @@ def intervention_create(request, alert_id):
     )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 6 — DÉTAIL D'UNE INTERVENTION
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 6 — DÉTAIL D'UNE INTERVENTION ==========
+
 @login_required
 def intervention_detail(request, pk):
     """Détail et mise à jour du statut d'une intervention"""
@@ -475,7 +408,7 @@ def intervention_detail(request, pk):
             if new_status == 'completed':
                 intervention.alert.status = 'resolved'
                 intervention.alert.save()
-
+            
             messages.success(request, f"Statut mis à jour : {intervention.get_status_display()}")
             return redirect('early_warning:intervention_detail', pk=pk)
 
@@ -486,10 +419,10 @@ def intervention_detail(request, pk):
     )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 7 — CONFIGURATION DES SEUILS
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 7 — CONFIGURATION DES SEUILS ==========
+
 @login_required
+@role_required('teacher', 'admin')
 def threshold_config(request):
     """Configuration des seuils d'alerte."""
     config = ThresholdConfig.get_config()
@@ -510,9 +443,8 @@ def threshold_config(request):
     )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 8 — EXPORT CSV
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 8 — EXPORT CSV ==========
+
 @login_required
 def export_risk_report_csv(request):
     """Export CSV des scores de risque"""
@@ -522,7 +454,7 @@ def export_risk_report_csv(request):
             datetime.now().strftime('%Y%m%d_%H%M%S')
         )
     )
-    response.write('\ufeff')  # BOM pour Excel
+    response.write('\ufeff')
 
     writer = csv.writer(response)
     writer.writerow([
@@ -544,13 +476,12 @@ def export_risk_report_csv(request):
             s.get_risk_level_display(),
             s.created_at.strftime('%Y-%m-%d %H:%M'),
         ])
-
+    
     return response
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 9 — EXPORT PDF
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 9 — EXPORT PDF ==========
+
 @login_required
 def export_risk_report_pdf(request):
     """Export PDF avec ReportLab"""
@@ -562,7 +493,7 @@ def export_risk_report_pdf(request):
         from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer,
                                         Table, TableStyle)
     except ImportError:
-        messages.error(request, "ReportLab n'est pas installé. Veuillez l'installer avec 'pip install reportlab'")
+        messages.error(request, "ReportLab n'est pas installé.")
         return redirect('early_warning:dashboard')
 
     response = HttpResponse(content_type='application/pdf')
@@ -602,7 +533,6 @@ def export_risk_report_pdf(request):
     )
     elements.append(Spacer(1, 0.25 * inch))
 
-    # Tableau stats
     stats = risk_scores.aggregate(
         total=Count('id'),
         high=Count('id', filter=Q(risk_level='high')),
@@ -627,7 +557,6 @@ def export_risk_report_pdf(request):
     elements.append(st)
     elements.append(Spacer(1, 0.25 * inch))
 
-    # Tableau étudiants
     if stats['total'] > 0:
         elements.append(Paragraph("Détail des Etudiants", styles['Heading2']))
         student_data = [['Nom', 'Classe', 'Absences', 'Moyenne', 'Score', 'Niveau']]
@@ -668,16 +597,47 @@ def export_risk_report_pdf(request):
                 )
         tbl.setStyle(TableStyle(style_cmds))
         elements.append(tbl)
-    else:
-        elements.append(Paragraph("Aucune donnée d'étudiant disponible.", styles['Normal']))
 
     doc.build(elements)
+    
     return response
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  VUE 10 — API JSON (pour les graphiques Chart.js)
-# ══════════════════════════════════════════════════════════════════════════════
+# ========== VUE 10 — MES INTERVENTIONS ==========
+
+@login_required
+def mes_interventions_list(request):
+    """Liste de toutes les interventions du professeur"""
+    interventions = Intervention.objects.select_related(
+        'alert__risk_score', 'ai_suggestion'
+    ).order_by('-created_at')
+    
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        interventions = interventions.filter(status=status_filter)
+    
+    paginator = Paginator(interventions, 10)
+    page = request.GET.get('page')
+    interventions_page = paginator.get_page(page)
+    
+    stats = {
+        'total': interventions.count(),
+        'completed': interventions.filter(status='completed').count(),
+        'in_progress': interventions.filter(status='in_progress').count(),
+        'planned': interventions.filter(status='planned').count(),
+        'overdue': 0,
+    }
+    
+    context = {
+        'interventions': interventions_page,
+        'stats': stats,
+        'status_filter': status_filter,
+    }
+    return render(request, 'early_warning/mes_interventions.html', context)
+
+
+# ========== VUE 11 — API JSON ==========
+
 @login_required
 def api_risk_data(request):
     """API JSON pour alimenter les graphiques du dashboard"""

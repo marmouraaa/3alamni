@@ -84,7 +84,7 @@ class StudentProfile(models.Model):
         ('science', '🔬 Sciences Fondamentales'),
         ('agri', '🌾 Agriculture'),
     ]
-    
+    parent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, verbose_name="Niveau scolaire")
     high_school_speciality = models.CharField(max_length=20, choices=HIGH_SCHOOL_SPECIALITIES, null=True, blank=True)
