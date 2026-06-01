@@ -1,10 +1,15 @@
 # health/urls.py
 from django.urls import path
+from strawberry.django.views import GraphQLView
 from . import views
+from .schema import schema
 
 app_name = 'health'
 
 urlpatterns = [
+    # GraphQL - Version corrigée
+    path('graphql/', GraphQLView.as_view(schema=schema), name='graphql'),
+    
     # Étudiant
     path('new/', views.new_request, name='new_request'),
     path('chat/<uuid:request_id>/', views.chat_view, name='chat'),

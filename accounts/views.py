@@ -202,9 +202,22 @@ def register_counselor(request):
 def profile_view(request):
     """Vue de profil utilisateur"""
     return render(request, 'accounts/profile.html', {'user': request.user})
+# accounts/views.py
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def home_redirect(request):
-    """Redirection vers la page d'accueil"""
-    if request.user.is_authenticated:
-        return _redirect_by_role(request.user)
-    return redirect('login')
+    """Redirige vers le dashboard approprié selon le rôle"""
+    user = request.user
+    
+    if user.role == 'student':
+        return redirect('dashboard:student')
+    elif user.role == 'teacher':
+        return redirect('dashboard:teacher')
+    elif user.role == 'counselor':
+        return redirect('dashboard:counselor')
+    elif user.role == 'parent':
+        return redirect('dashboard:parent')  # ← Utilise 'parent' pas 'parent_dashboard'
+    else:
+        return redirect('iphone_home')

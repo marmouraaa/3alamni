@@ -236,9 +236,7 @@ def dashboard_teacher(request):
     return render(request, 'dashboard/teacher.html', context)
 
 
-@login_required
-def dashboard_counselor(request):
-    return render(request, 'dashboard/counselor.html')
+
 @login_required
 def dashboard_parent(request):
     """Dashboard parent - affiche les données de l'enfant lié"""
@@ -347,3 +345,43 @@ def dashboard_parent(request):
         context = {'child': None}
     
     return render(request, 'dashboard/parent.html', context)
+
+# dashboard/views.py - Modifiez la fonction dashboard_counselor
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from health.models import HealthRequest, HealthTimelineEvent
+from django.utils import timezone
+from datetime import timedelta
+
+@login_required
+def dashboard_counselor(request):
+    """Dashboard conseiller avec vraies données"""
+    
+    # Récupérer les vraies demandes
+    pending_requests = HealthRequest.objects.filter(status='pending').order_by('-created_at')
+    in_progress_requests = HealthRequest.objects.filter(status='in_progress').order_by('-updated_at')
+    closed_count = HealthRequest.objects.filter(status='closed').count()
+    
+    # Actions récentes (timeline)
+    recent_events = HealthTimelineEvent.objects.filter(
+        created_at__gte=timezone.now() - timedelta(days=7)
+    ).order_by('-created_at')[:5]
+    
+    recent_actions = []
+    for event in recent_events:
+        recent_actions.append({
+            'time': event.created_at.strftime('%H:%M'),
+            'description': event.action[:60]
+        })
+    
+    context = {
+        'pending_count': pending_requests.count(),
+        'in_progress_count': in_progress_requests.count(),
+        'closed_count': closed_count,
+        'pending_requests': pending_requests,
+        'in_progress_requests': in_progress_requests,
+        'recent_actions': recent_actions,
+    }
+    
+    return render(request, 'dashboard/counselor.html', context)

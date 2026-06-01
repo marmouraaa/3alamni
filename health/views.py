@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
+from django.db.models import Count, Q
 
 from .models import HealthRequest, Message, HealthTimelineEvent, AuditLog
 from .services import HealthService
@@ -15,18 +16,21 @@ def new_request(request):
     """Formulaire de nouvelle demande santé mentale"""
     if request.method == 'POST':
         category = request.POST.get('category')
-        message_text = request.POST.get('message')
+        message_text = request.POST.get('message', '').strip()
         
         if not message_text:
             messages.error(request, "Veuillez écrire votre message.")
             return redirect('health:new_request')
+        
+        if not category:
+            category = 'other'
         
         # Déterminer la tranche d'âge
         age_group = "16-18"  # défaut
         if hasattr(request.user, 'student_profile'):
             level = request.user.student_profile.level
             if level == 'primary':
-                age_group = '13-15'
+                age_group = '10-12'
             elif level == 'middle':
                 age_group = '13-15'
             elif level == 'high':
@@ -38,16 +42,14 @@ def new_request(request):
         health_request = service.create_request(
             student=request.user,
             message=message_text,
-            category=category or 'other',
+            category=category,
             age_group=age_group
         )
         
-        messages.success(request, "Votre message a été envoyé. Un conseiller vous répondra bientôt.")
+        messages.success(request, "✓ Votre message a été envoyé. Un conseiller vous répondra bientôt.")
         return redirect('health:chat', request_id=health_request.id)
     
-    return render(request, 'health/new_request.html', {
-        'is_counselor': getattr(request.user, 'role', '') == 'counselor'
-    })
+    return render(request, 'health/new_request.html')
 
 
 @login_required
@@ -56,21 +58,22 @@ def chat_view(request, request_id):
     health_request = get_object_or_404(HealthRequest, id=request_id)
     
     # Vérifier accès
-    if hasattr(request.user, 'role') and request.user.role == 'student' and health_request.student != request.user:
+    if request.user.role == 'student' and health_request.student != request.user:
         messages.error(request, "Accès non autorisé.")
         return redirect('iphone_home')
     
     # Conseiller prend en charge si en attente
-    if hasattr(request.user, 'role') and request.user.role in ['counselor', 'admin'] and health_request.status == 'pending':
+    if request.user.role in ['counselor', 'admin'] and health_request.status == 'pending':
         service = HealthService()
         service.assign_counselor(request_id, request.user)
         health_request.refresh_from_db()
     
+    # Récupérer les messages (limités aux 100 derniers pour performance)
     messages_list = health_request.messages.all()[:100]
     timeline = health_request.timeline_events.all()[:50]
     
-    # Injection de panne: tentative de voir identité réelle
-    if 'debug_show_identity' in request.GET and hasattr(request.user, 'role') and request.user.role in ['counselor', 'admin']:
+    # === INJECTION DE PANNE: tentative de voir identité réelle ===
+    if 'debug_show_identity' in request.GET and request.user.role in ['counselor', 'admin']:
         service = HealthService()
         service.log_security_violation(
             user=request.user,
@@ -78,7 +81,10 @@ def chat_view(request, request_id):
             ip_address=request.META.get('REMOTE_ADDR'),
             user_agent=request.META.get('HTTP_USER_AGENT', '')
         )
-        messages.warning(request, "Information non disponible (anonymat garanti)")
+        messages.warning(request, "🔒 Information non disponible - l'anonymat de l'étudiant est garanti par la plateforme.")
+    
+    # Obtenir l'affichage de l'urgence
+    urgency_display = dict(HealthRequest.URGENCY_CHOICES).get(health_request.urgency_level, 'Faible')
     
     return render(request, 'health/chat.html', {
         'request_id': health_request.id,
@@ -86,27 +92,38 @@ def chat_view(request, request_id):
         'messages_list': messages_list,
         'timeline': timeline,
         'request_status': health_request.status,
-        'is_counselor': hasattr(request.user, 'role') and request.user.role in ['counselor', 'admin'],
+        'is_counselor': request.user.role in ['counselor', 'admin'],
         'ai_category': health_request.get_effective_category(),
         'ai_confidence': health_request.get_effective_confidence(),
         'ai_explanation': health_request.ai_explanation,
-        'urgency_level': health_request.get_urgency_level_display(),
+        'urgency_level': urgency_display,
     })
 
 
 @login_required
 def counselor_dashboard(request):
     """Dashboard conseiller"""
-    if not hasattr(request.user, 'role') or request.user.role not in ['counselor', 'admin']:
+    if request.user.role not in ['counselor', 'admin']:
         messages.error(request, "Accès réservé aux conseillers.")
         return redirect('iphone_home')
-    
-    from django.db.models import Count
     
     pending_count = HealthRequest.objects.filter(status='pending').count()
     in_progress_count = HealthRequest.objects.filter(status='in_progress').count()
     closed_count = HealthRequest.objects.filter(status='closed').count()
-    category_stats = HealthRequest.objects.values('ai_category').annotate(count=Count('id'))
+    
+    # Statistiques par catégorie (catégorie effective = override ou IA)
+    category_stats = []
+    for cat_code, cat_label in HealthRequest.CATEGORY_CHOICES:
+        # Compter en utilisant la catégorie effective (override si existant)
+        count = HealthRequest.objects.filter(
+            Q(overridden_category=cat_code) | 
+            Q(overridden_category__isnull=True, ai_category=cat_code)
+        ).count()
+        if count > 0:
+            category_stats.append({
+                'ai_category': cat_code,
+                'count': count
+            })
     
     return render(request, 'health/counselor_dashboard.html', {
         'pending_count': pending_count,
@@ -118,8 +135,8 @@ def counselor_dashboard(request):
 
 @login_required
 def requests_list(request):
-    """Liste des demandes"""
-    if not hasattr(request.user, 'role') or request.user.role not in ['counselor', 'admin']:
+    """Liste des demandes pour conseiller"""
+    if request.user.role not in ['counselor', 'admin']:
         messages.error(request, "Accès réservé aux conseillers.")
         return redirect('iphone_home')
     
@@ -134,7 +151,9 @@ def requests_list(request):
     else:
         requests_qs = HealthRequest.objects.all()
     
+    # Optimisation: prefetch messages pour éviter N+1 queries
     requests_qs = requests_qs.prefetch_related('messages').order_by('-created_at')
+    
     paginator = Paginator(requests_qs, 20)
     page_number = request.GET.get('page', 1)
     requests_page = paginator.get_page(page_number)
@@ -147,10 +166,15 @@ def requests_list(request):
 
 @login_required
 def timeline_view(request, request_id):
-    """Timeline détaillée"""
+    """Timeline détaillée d'une demande"""
     health_request = get_object_or_404(HealthRequest, id=request_id)
     
-    if hasattr(request.user, 'role') and request.user.role == 'student' and health_request.student != request.user:
+    # Vérifier accès
+    if request.user.role == 'student' and health_request.student != request.user:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('iphone_home')
+    
+    if request.user.role not in ['student', 'counselor', 'admin']:
         messages.error(request, "Accès non autorisé.")
         return redirect('iphone_home')
     
@@ -165,13 +189,13 @@ def timeline_view(request, request_id):
 @login_required
 @require_http_methods(['POST'])
 def override_category(request, request_id):
-    """API override catégorie"""
-    if not hasattr(request.user, 'role') or request.user.role not in ['counselor', 'admin']:
+    """API pour override la catégorie (Human in the loop)"""
+    if request.user.role not in ['counselor', 'admin']:
         return JsonResponse({'success': False, 'error': 'Non autorisé'}, status=403)
     
     category = request.POST.get('category')
-    if not category:
-        return JsonResponse({'success': False, 'error': 'Catégorie requise'}, status=400)
+    if not category or category not in dict(HealthRequest.CATEGORY_CHOICES):
+        return JsonResponse({'success': False, 'error': 'Catégorie invalide'}, status=400)
     
     service = HealthService()
     try:
@@ -187,8 +211,8 @@ def override_category(request, request_id):
 @login_required
 @require_http_methods(['POST'])
 def close_request(request, request_id):
-    """API clôture demande"""
-    if not hasattr(request.user, 'role') or request.user.role not in ['counselor', 'admin']:
+    """API pour clôturer une demande"""
+    if request.user.role not in ['counselor', 'admin']:
         return JsonResponse({'success': False, 'error': 'Non autorisé'}, status=403)
     
     summary = request.POST.get('summary', '')
@@ -203,11 +227,11 @@ def close_request(request, request_id):
 
 @login_required
 def security_audit_log(request):
-    """Page audit sécurité"""
-    if not hasattr(request.user, 'role') or request.user.role != 'admin':
+    """Page d'audit de sécurité (admin uniquement)"""
+    if request.user.role != 'admin':
         messages.error(request, "Accès réservé aux administrateurs.")
         return redirect('iphone_home')
     
-    logs = AuditLog.objects.all().order_by('-created_at')[:100]
+    logs = AuditLog.objects.all().order_by('-created_at')[:200]
     
     return render(request, 'health/audit_log.html', {'logs': logs})

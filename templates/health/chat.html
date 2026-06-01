@@ -140,6 +140,8 @@
 }
 </style>
 {% endblock %}
+<!-- health/templates/health/chat.html - VERSION CORRIGÉE -->
+
 
 {% block phone_content %}
 <div class="chat-wrapper">
@@ -183,7 +185,7 @@
                     {% else %}🧠 Conseiller{% endif %}
                 </div>
                 {{ msg.content }}
-                <div class="time">{{ msg.timestamp|date:"H:i" }}</div>
+                <div class="time">{{ msg.created_at|date:"H:i" }}</div>  <!-- CORRIGÉ: timestamp → created_at -->
             </div>
         </div>
         {% endfor %}
@@ -203,7 +205,8 @@
     </div>
     {% endif %}
 
-    <a href="{% if is_counselor %}{% url 'health_requests' %}{% else %}{% url 'iphone_home' %}{% endif %}"
+    <!-- CORRIGÉ: URL correcte -->
+    <a href="{% if is_counselor %}{% url 'health:requests_list' %}{% else %}{% url 'iphone_home' %}{% endif %}"
        style="display:block;text-align:center;margin-top:8px;color:rgba(255,255,255,0.4);font-size:0.7rem;">
         ← Retour
     </a>
@@ -228,8 +231,9 @@
 {% endif %}
 
 <script>
-const REQUEST_ID = {{ request_id }};
-const WS_URL     = 'ws://' + window.location.host + '/ws/health/chat/' + REQUEST_ID + '/';
+// CORRIGÉ: REQUEST_ID doit être une string (guid)
+const REQUEST_ID = '{{ request_id }}';  // Ajout des guillemets
+const WS_URL = 'ws://' + window.location.host + '/ws/health/chat/' + REQUEST_ID + '/';
 const CSRF_TOKEN = '{{ csrf_token }}';
 
 let ws = null;
@@ -244,28 +248,34 @@ function connect() {
     ws.onopen = () => {
         reconnectAttempts = 0;
         setStatus('connected', '🟢 Connecté — chat chiffré et anonyme');
-        document.getElementById('send-btn').disabled = false;
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) sendBtn.disabled = false;
     };
 
     ws.onmessage = (e) => {
-        const data = JSON.parse(e.data);
+        try {
+            const data = JSON.parse(e.data);
 
-        if (data.type === 'system') {
-            appendSystem(data.message);
-        } else if (data.type === 'security_block') {
-            appendSystem('⛔ ' + data.message);
-        } else if (data.type === 'message') {
-            appendMessage(data.sender, data.message, data.sender_role, data.timestamp);
-        } else if (data.type === 'error') {
-            appendSystem('⚠️ ' + data.message);
+            if (data.type === 'system') {
+                appendSystem(data.message);
+            } else if (data.type === 'security_block') {
+                appendSystem('⛔ ' + data.message);
+            } else if (data.type === 'message') {
+                appendMessage(data.sender, data.message, data.sender_role, data.timestamp);
+            } else if (data.type === 'error') {
+                appendSystem('⚠️ ' + data.message);
+            }
+        } catch (err) {
+            console.error('Erreur parsing message:', err);
         }
     };
 
     ws.onclose = (e) => {
         setStatus('disconnected', '🔴 Déconnecté');
-        document.getElementById('send-btn').disabled = true;
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) sendBtn.disabled = true;
 
-        // Reconnexion automatique — FAILURE INJECTION : déconnexion WebSocket
+        // Reconnexion automatique
         if (reconnectAttempts < MAX_RECONNECT) {
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
             reconnectAttempts++;
@@ -283,25 +293,30 @@ function connect() {
 
 function sendMsg() {
     const input = document.getElementById('msg-input');
-    const text  = input.value.trim();
+    if (!input) return;
+    const text = input.value.trim();
     if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ message: text }));
     input.value = '';
 }
 
-document.getElementById('msg-input')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMsg();
-});
+const msgInput = document.getElementById('msg-input');
+if (msgInput) {
+    msgInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMsg();
+    });
+}
 
 // ── Affichage ─────────────────────────────────────────────────────────────
 function appendMessage(sender, text, role, time) {
     const area = document.getElementById('messages-area');
-    const div  = document.createElement('div');
+    if (!area) return;
+    const div = document.createElement('div');
     div.className = `message message-${role}`;
     div.innerHTML = `
         <div class="bubble">
-            <div class="sender">${sender}</div>
-            ${escHtml(text)}
+            <div class="sender">${escapeHtml(sender)}</div>
+            ${escapeHtml(text)}
             <div class="time">${time || new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'})}</div>
         </div>`;
     area.appendChild(div);
@@ -310,31 +325,44 @@ function appendMessage(sender, text, role, time) {
 
 function appendSystem(text) {
     const area = document.getElementById('messages-area');
-    const div  = document.createElement('div');
+    if (!area) return;
+    const div = document.createElement('div');
     div.className = 'message message-system';
-    div.innerHTML = `<div class="bubble">${escHtml(text)}</div>`;
+    div.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
     area.appendChild(div);
     area.scrollTop = area.scrollHeight;
 }
 
 function setStatus(cls, text) {
     const el = document.getElementById('conn-status');
-    el.className = `conn-status ${cls}`;
-    el.textContent = text;
+    if (el) {
+        el.className = `conn-status ${cls}`;
+        el.textContent = text;
+    }
 }
 
-function escHtml(t) {
+function escapeHtml(t) {
+    if (!t) return '';
     const d = document.createElement('div');
     d.textContent = t;
     return d.innerHTML;
 }
 
 // ── Override catégorie (conseiller) ───────────────────────────────────────
-function openOverride()  { document.getElementById('override-modal').style.display = 'block'; }
-function closeOverride() { document.getElementById('override-modal').style.display = 'none'; }
+function openOverride() {
+    const modal = document.getElementById('override-modal');
+    if (modal) modal.style.display = 'block';
+}
+function closeOverride() {
+    const modal = document.getElementById('override-modal');
+    if (modal) modal.style.display = 'none';
+}
 
 function submitOverride() {
-    const cat = document.getElementById('override-select').value;
+    const catSelect = document.getElementById('override-select');
+    if (!catSelect) return;
+    const cat = catSelect.value;
+    
     fetch(`/health/override/${REQUEST_ID}/`, {
         method: 'POST',
         headers: {
@@ -348,15 +376,23 @@ function submitOverride() {
         if (data.success) {
             appendSystem(`✅ Catégorie corrigée → ${data.new_category} (enregistré dans les logs)`);
             closeOverride();
+            // Optionnel: rafraîchir l'affichage de la catégorie
+            location.reload();
         } else {
-            appendSystem('❌ Erreur : ' + (data.error || 'inconnue'));
+            appendSystem('❌ Erreur : ' (data.error || 'inconnue'));
         }
+    })
+    .catch(err => {
+        appendSystem('❌ Erreur réseau : ' + err.message);
     });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 connect();
 // Scroll en bas au chargement
-document.getElementById('messages-area').scrollTop = 99999;
+const messagesArea = document.getElementById('messages-area');
+if (messagesArea) {
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
 </script>
 {% endblock %}

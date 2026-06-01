@@ -22,6 +22,7 @@ GROQ_API_KEY = config('GROQ_API_KEY', default='')
 #  APPLICATIONS
 # ─────────────────────────────────────────────
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -39,7 +40,9 @@ INSTALLED_APPS = [
     'dashboard',
     'audit',
 ]
-
+STRAWBERRY_DJANGO = {
+    'FIELD_DESCRIPTION_FROM_HELP_TEXT': True,
+}
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -171,18 +174,15 @@ TIME_ZONE = 'Africa/Tunis'
 USE_I18N = True
 USE_TZ = True
 
-# ─────────────────────────────────────────────
-#  FICHIERS STATIQUES & MEDIA
-# ─────────────────────────────────────────────
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    os.path.join(BASE_DIR, 'static'),
 ]
 
+# Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # ─────────────────────────────────────────────
 #  DEFAULT AUTO FIELD
 # ─────────────────────────────────────────────
