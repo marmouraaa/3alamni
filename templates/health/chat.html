@@ -373,15 +373,14 @@ function submitOverride() {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            appendSystem(`✅ Catégorie corrigée → ${data.new_category} (enregistré dans les logs)`);
-            closeOverride();
-            // Optionnel: rafraîchir l'affichage de la catégorie
-            location.reload();
-        } else {
-            appendSystem('❌ Erreur : ' (data.error || 'inconnue'));
-        }
-    })
+            if (data.success) {
+                appendSystem(`✅ Catégorie corrigée → ${data.new_category} (enregistré dans les logs)`);
+                closeOverride();
+                location.reload();
+            } else {
+                appendSystem('❌ Erreur : ' + (data.error || 'inconnue'));  // ← corrigé
+            }
+        })
     .catch(err => {
         appendSystem('❌ Erreur réseau : ' + err.message);
     });

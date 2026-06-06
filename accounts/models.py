@@ -97,8 +97,10 @@ class StudentProfile(models.Model):
     # Suivi académique
     total_study_hours = models.IntegerField(default=0)
     current_streak = models.IntegerField(default=0)
+    best_streak = models.IntegerField(default=0)              # ← nouveau
     total_quizzes_completed = models.IntegerField(default=0)
-    
+    total_correct_answers = models.IntegerField(default=0)    # ← nouveau
+    total_quiz_points = models.IntegerField(default=0)        # ← nouveau
     class Meta:
         verbose_name = "Profil étudiant"
         verbose_name_plural = "Profils étudiants"

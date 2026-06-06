@@ -8,7 +8,9 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-
+from django.views.decorators.csrf import csrf_exempt
+from strawberry.django.views import GraphQLView
+from health.schema import schema as health_schema
 @login_required
 def dashboard_redirect(request):
     if request.user.role == 'student':
@@ -30,16 +32,25 @@ def iphone_home(request):
 def profile_view(request):
     return render(request, 'accounts/profile.html', {'user': request.user})
 
+
+# core/urls.py
+
+from django.views.decorators.csrf import csrf_exempt
+from strawberry.django.views import GraphQLView
+from health.schema import schema as health_schema   # ← ajouter
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('accounts.urls')),
     path('dashboard/redirect/', dashboard_redirect, name='dashboard_redirect'),
-    path('dashboard/', include('dashboard.urls')),  # ← Route unique pour dashboard
+    path('dashboard/', include('dashboard.urls')),
     path('iphone/', iphone_home, name='iphone_home'),
     path('profile/', profile_view, name='profile'),
     path('warning/', include('early_warning.urls')),
     path('health/', include('health.urls')),
+    path('health/graphql/', csrf_exempt(GraphQLView.as_view(schema=health_schema)), name='health_graphql'),  
     path('education/', include('education.urls')),
     path('study/', include('study.urls')),
     path('audit/', include('audit.urls')),
+    path('', include('education.urls_social')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -60,7 +60,7 @@ class RiskScore(models.Model):
     ]
 
     student_name = models.CharField(max_length=100)
-    student_id = models.CharField(max_length=50, db_index=True)
+    student_id = models.IntegerField(db_index=True)
     class_name = models.CharField(max_length=100)
     absences = models.IntegerField()
     avg_grade = models.FloatField()

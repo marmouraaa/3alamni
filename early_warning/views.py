@@ -12,7 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Avg, Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 
 from .forms import ImportCSVForm, InterventionForm, ThresholdConfigForm
 from .models import AISuggestion, Alert, Intervention, RiskScore, ThresholdConfig
@@ -26,9 +26,10 @@ logger = logging.getLogger(__name__)
 
 # ========== DÉCORATEUR DE RÔLE ==========
 
+
 def role_required(*allowed_roles):
-    """Décorateur pour vérifier les rôles avec log d'audit"""
     def decorator(view_func):
+        @login_required                          # ← protège d'abord l'auth
         def wrapped_view(request, *args, **kwargs):
             if not hasattr(request.user, 'role') or request.user.role not in allowed_roles:
                 log_blocked(
@@ -42,7 +43,6 @@ def role_required(*allowed_roles):
             return view_func(request, *args, **kwargs)
         return wrapped_view
     return decorator
-
 
 # ========== VUE 1 — IMPORT CSV ==========
 
